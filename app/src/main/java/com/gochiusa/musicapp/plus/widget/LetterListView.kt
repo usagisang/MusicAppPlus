@@ -36,7 +36,7 @@ class LetterListView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
 
     lateinit var letters: List<String>
 
-    private var fontScale = 0f
+    private val fontScale: Float = context.resources.displayMetrics.scaledDensity
 
     constructor(context: Context): this(context, null, 0)
     constructor(context: Context, attrs: AttributeSet?): this(context, attrs, 0)
@@ -44,12 +44,11 @@ class LetterListView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
 
     init {
         // 获取sp与px的比例
-        fontScale = context.resources.displayMetrics.scaledDensity
         // 初始化画笔的设置
-        normalTextPaint.textSize = spToPx(LETTER_SIZE)
+        normalTextPaint.textSize = Utils.spToPx(LETTER_SIZE, fontScale)
         normalTextPaint.color = Color.BLACK
 
-        clickTextPaint.textSize = spToPx(LETTER_SIZE)
+        clickTextPaint.textSize = Utils.spToPx(LETTER_SIZE, fontScale)
         clickTextPaint.color = ResourcesCompat.getColor(resources,
             R.color.colorBlue, getContext().theme)
     }
@@ -142,13 +141,6 @@ class LetterListView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
         return true
     }
 
-
-    /**
-     *  sp转px的工具方法
-     */
-    private fun spToPx(sp: Float): Float {
-        return (sp * fontScale + 0.5f)
-    }
 
     companion object {
         /**
