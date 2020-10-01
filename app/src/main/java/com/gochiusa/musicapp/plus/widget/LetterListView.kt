@@ -9,6 +9,7 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.res.ResourcesCompat
 import com.gochiusa.musicapp.plus.R
+import com.gochiusa.musicapp.plus.util.WidgetUtil
 import kotlin.math.floor
 
 class LetterListView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
@@ -45,10 +46,10 @@ class LetterListView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
     init {
         // 获取sp与px的比例
         // 初始化画笔的设置
-        normalTextPaint.textSize = Utils.spToPx(LETTER_SIZE, fontScale)
+        normalTextPaint.textSize = WidgetUtil.spToPx(LETTER_SIZE, fontScale)
         normalTextPaint.color = Color.BLACK
 
-        clickTextPaint.textSize = Utils.spToPx(LETTER_SIZE, fontScale)
+        clickTextPaint.textSize = WidgetUtil.spToPx(LETTER_SIZE, fontScale)
         clickTextPaint.color = ResourcesCompat.getColor(resources,
             R.color.colorBlue, getContext().theme)
     }

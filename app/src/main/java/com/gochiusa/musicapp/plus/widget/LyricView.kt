@@ -5,8 +5,6 @@ import android.animation.ValueAnimator.AnimatorUpdateListener
 import android.content.Context
 import android.graphics.*
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -16,7 +14,6 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.view.ViewCompat
 import com.github.authorfu.lrcparser.parser.Sentence
 import com.gochiusa.musicapp.plus.R
 import com.gochiusa.musicapp.plus.util.TimeCalculator
@@ -77,7 +74,7 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
     /**
      *  标志变量，是否正在加载歌词
      */
-    var loadingLyric: Boolean = false
+    var loadingLyric: Boolean = true
         set(value) {
             field = value
             invalidate()
