@@ -1,0 +1,12 @@
+<resources>
+    <string name="login_phone_number">手机号</string>
+    <string name="login_password">密码</string>
+    <string name="login_login">登录</string>
+    <string name="login_nick_name">昵称</string>
+    <string name="login_signature">签名</string>
+    <string name="login_playlist_count">歌单总数</string>
+    <string name="login_user_level">账户等级</string>
+    <string name="login_listen_song">听过的歌</string>
+    <string name="login_create_days">账户创建了</string>
+    <string name="login_logout">注销登录</string>
+</resources>

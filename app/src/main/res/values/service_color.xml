@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="color_service_song_name">#333437</color>
+    <color name="color_service_singer">#999999</color>
+    <color name="color_service_indicator_background">#EBEBEB</color>
+    <color name="color_main_bottom_background">#CCF8F6F6</color>
+</resources>
