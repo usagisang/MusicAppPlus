@@ -2,7 +2,7 @@ package com.gochiusa.musicapp.plus.base
 
 import java.lang.ref.WeakReference
 
-class BasePresenterImpl<V : BaseView> (view: V) : BasePresenter {
+open class BasePresenterImpl<V : BaseView> (view: V) : BasePresenter {
 
     // 保存对View的弱引用
     private var viewReference: WeakReference<V>? = WeakReference(view)
