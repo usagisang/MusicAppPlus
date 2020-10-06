@@ -17,6 +17,7 @@ object TimeCalculator {
 
     @JvmStatic
     fun calculateSongDuration(duration: Long): String {
+        builder.clear()
         // 获得总秒数
         val totalSecond = duration / 1000
         // 求分钟
