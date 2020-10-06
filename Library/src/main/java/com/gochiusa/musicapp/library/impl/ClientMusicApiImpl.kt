@@ -1,14 +1,14 @@
 package com.gochiusa.musicapp.library.impl
 
+import com.gochiusa.musicapp.library.util.DataUtil
 import com.example.repository.RequestCallBack
 import com.example.repository.api.ClientMusicApi
 import com.example.repository.bean.*
-import com.gochiusa.musicapp.library.RequestConstant.retrofit
 import com.gochiusa.musicapp.library.util.defaultSubscribe
 
 class ClientMusicApiImpl: ClientMusicApi {
 
-    private val musicApi: MusicApi = retrofit.create(MusicApi::class.java)
+    private val musicApi: MusicApi = DataUtil.retrofit.create(MusicApi::class.java)
 
     override fun getUserPlayList(uid: Long, callBack: RequestCallBack<UserPlayListJson>) {
         defaultSubscribe(musicApi.getUserPlayList(uid.toString()), callBack)
