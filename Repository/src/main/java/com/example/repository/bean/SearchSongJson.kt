@@ -9,6 +9,7 @@ class SearchSongJson {
 
     class Result {
         var songs: MutableList<Song>? = null
+        var songCount : Int? = null
 
         class Song {
             var id: Long? = null

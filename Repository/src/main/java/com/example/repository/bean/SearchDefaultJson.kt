@@ -5,6 +5,6 @@ class SearchDefaultJson {
     
     class Data{
         var showKeyword :String? = null
-        var realKeyword : String? = null
+        var realkeyword : String? = null
     }
 }
