@@ -3,13 +3,13 @@ package com.gochiusa.musicapp.library.util
 import com.example.repository.api.ClientLoginApi
 import com.example.repository.api.ClientMusicApi
 import com.example.repository.RequestCallBack
+import com.example.repository.api.ClientImageApi
 import com.example.repository.api.ClientSearchApi
 import com.gochiusa.musicapp.library.PersistenceCookieJar
 import com.gochiusa.musicapp.library.RequestConstant
-import com.gochiusa.musicapp.library.impl.ClientLoginApiImpl
-import com.gochiusa.musicapp.library.impl.ClientMusicApiImpl
-import com.gochiusa.musicapp.library.impl.ClientSearchApiImpl
-import com.gochiusa.musicapp.library.impl.CookieStoreImpl
+import com.gochiusa.musicapp.library.impl.*
+import com.gochiusa.musicapp.library.update.ClientUpdateApi
+import com.gochiusa.musicapp.library.update.ClientUpdateApiImpl
 import okhttp3.*
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory
@@ -41,7 +41,9 @@ object DataUtil {
     val loginApi: ClientLoginApi = ClientLoginApiImpl()
     val clientMusicApi: ClientMusicApi = ClientMusicApiImpl()
     val clientSearchApi : ClientSearchApi = ClientSearchApiImpl()
-    val clientImageApi: ClientMusicApi = ClientMusicApiImpl()
+    val clientImageApi: ClientImageApi = ClientImageApiImpl()
+    val clientUpdateApi: ClientUpdateApi = ClientUpdateApiImpl()
+
 
     /**
      * OkHttp解析，直接返回Json数据.
@@ -56,7 +58,7 @@ object DataUtil {
             }
 
             override fun onResponse(call: Call, response: Response) {
-                callback.callback(response.toString())
+                callback.callback(response.body()?.string() ?:"")
             }
 
         })

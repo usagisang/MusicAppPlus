@@ -122,7 +122,7 @@ class CookieStoreImpl(val context: Context): CookieStore {
     /**
      *  辅助方法，将{@code HttpUrl}映射为String
      */
-    private fun getHost(httpUrl: HttpUrl): String = httpUrl.host()
+    private fun getHost(httpUrl: HttpUrl): String = "${httpUrl.host()}:${httpUrl.port()}"
 
 
     /**

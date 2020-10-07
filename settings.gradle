@@ -1,3 +1,5 @@
+include ':Library'
+include ':Repository'
 include ':LrcParser'
 include ':app'
 rootProject.name = "MusicAppPlus"
