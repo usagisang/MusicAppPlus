@@ -12,6 +12,8 @@ import com.gochiusa.musicapp.plus.R
 class FunctionButtonAdapter(val context: Context):
     RecyclerView.Adapter<FunctionButtonAdapter.ViewHolder>() {
 
+    var onButtonClickListener: OnButtonClickListener? = null
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val itemView = LayoutInflater.from(context)
             .inflate(R.layout.item_main_function_button, parent, false)
@@ -25,18 +27,30 @@ class FunctionButtonAdapter(val context: Context):
             0 -> {
                 holder.imageView.setImageResource(R.drawable.ic_main_download)
                 holder.textView.text = "下载管理"
+                holder.itemView.setOnClickListener {
+                    onButtonClickListener?.onClick(0)
+                }
             }
             1 -> {
                 holder.imageView.setImageResource(R.drawable.ic_main_local_music)
                 holder.textView.text = "本地音乐"
+                holder.itemView.setOnClickListener {
+                    onButtonClickListener?.onClick(1)
+                }
             }
             2 -> {
                 holder.imageView.setImageResource(R.drawable.ic_main_user_playlist)
                 holder.textView.text = "歌单收藏"
+                holder.itemView.setOnClickListener {
+                    onButtonClickListener?.onClick(2)
+                }
             }
             3 -> {
                 holder.imageView.setImageResource(R.drawable.ic_main_update_app)
                 holder.textView.text = "检查更新"
+                holder.itemView.setOnClickListener {
+                    onButtonClickListener?.onClick(3)
+                }
             }
         }
     }
@@ -44,5 +58,9 @@ class FunctionButtonAdapter(val context: Context):
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val imageView: ImageView = itemView.findViewById(R.id.iv_main_button_item)
         val textView: TextView = itemView.findViewById(R.id.tv_main_button_title)
+    }
+
+    interface OnButtonClickListener {
+        fun onClick(position: Int)
     }
 }

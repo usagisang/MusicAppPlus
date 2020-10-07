@@ -29,6 +29,7 @@ class UserPagePresenter(view: UserContract.View):
         DataUtil.loginApi.login(phone, password, object: RequestCallBack<UserJson> {
             override fun callback(data: UserJson) {
                 data.profile?.let {
+                    view?.showLoading(false)
                     view?.loginSuccess(User(it.userId ?: 0L,
                         it.nickname, it.avatarUrl))
                 }
