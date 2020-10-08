@@ -42,7 +42,7 @@
         android:layout_toStartOf="@+id/btn_widget_playlist"
         android:layout_width="36dp"
         android:layout_marginVertical="7dp"
-        android:layout_marginEnd="5dp"
+        android:layout_marginEnd="7dp"
         android:layout_height="wrap_content"
         android:background="@drawable/ic_widget_play_circle" />
     <Button
@@ -50,6 +50,7 @@
         android:layout_alignParentEnd="true"
         android:layout_width="36dp"
         android:layout_marginVertical="7dp"
+        android:layout_marginEnd="5dp"
         android:layout_height="wrap_content"
         android:background="@drawable/ic_widget_playlist" />
 </RelativeLayout>

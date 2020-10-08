@@ -5,18 +5,43 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".tasks.stage.StageActivity">
-    <TextView
-        android:id="@+id/tv_stage_music_name"
+    <RelativeLayout
+        android:id="@+id/rl_song_information"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:layout_marginTop="15dp"
-        android:textSize="15sp"/>
+        android:layout_height="wrap_content">
+        <ImageButton
+            android:id="@+id/btn_stage_back"
+            android:background="@drawable/ic_widget_back"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="5dp"
+            android:layout_width="35dp"
+            android:layout_height="35dp" />
+        <TextView
+            android:id="@+id/tv_stage_music_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="青い空のカミュ"
+            android:layout_marginStart="16dp"
+            android:layout_toEndOf="@+id/btn_stage_back"
+            android:textColor="@color/colorBlack"
+            android:textSize="17.5sp"/>
+        <TextView
+            android:id="@+id/tv_stage_music_artist"
+            tools:text="霜月はるか"
+            android:textSize="13sp"
+            android:layout_below="@+id/tv_stage_music_name"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="3dp"
+            android:layout_toEndOf="@+id/btn_stage_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </RelativeLayout>
     <com.gochiusa.musicapp.plus.widget.RoundImageView
         android:id="@+id/iv_stage_round_album"
         android:layout_centerHorizontal="true"
         android:layout_marginVertical="80dp"
-        android:layout_below="@+id/tv_stage_music_name"
+        android:layout_below="@+id/rl_song_information"
+        android:src="@drawable/ic_widget_album"
         android:layout_width="250dp"
         android:layout_height="250dp" />
     <com.gochiusa.musicapp.plus.widget.LyricView
@@ -25,7 +50,7 @@
         android:layout_height="match_parent"
         android:visibility="gone"
         android:layout_marginVertical="10dp"
-        android:layout_below="@id/tv_stage_music_name"
+        android:layout_below="@id/rl_song_information"
         android:layout_above="@id/widget_stage_music_progress_bar"/>
 
     <com.gochiusa.musicapp.plus.widget.MusicProgressBar
