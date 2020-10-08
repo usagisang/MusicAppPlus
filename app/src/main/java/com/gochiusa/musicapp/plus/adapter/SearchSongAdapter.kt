@@ -22,9 +22,9 @@ class SearchSongAdapter(list: MutableList<Song>, val context: Context) :
         if (holder is ContentViewHolder) {
             val song = getItem(position)
             holder.songNameTextView.text = song.name
-            holder.singerNameTextView.text = song.artists.joinToString(
+            holder.singerNameTextView.text = song.artists?.joinToString(
                 separator = StringContract.COMMA_SEPARATOR) {
-                it.name
+                it.name ?: ""
             }
             holder.albumNameTextView.text = song.albumName
         }

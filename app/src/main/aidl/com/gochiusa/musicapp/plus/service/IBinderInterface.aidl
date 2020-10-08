@@ -2,6 +2,8 @@
 package com.gochiusa.musicapp.plus.service;
 
 import com.gochiusa.musicapp.plus.service.IPlayerStateListener;
+import com.gochiusa.musicapp.plus.entity.Song;
+import com.gochiusa.musicapp.plus.entity.Artist;
 
 // Declare any non-default types here with import statements
 
@@ -18,7 +20,7 @@ interface IBinderInterface {
     int getDuration();
     // 传入预备播放的歌曲的id，让服务准备播放资源，但并不播放。
     // 此方法承诺可以进行高频率的设置，但是只会使用最后提交的歌曲进行播放
-    void prepareMusic(long musicId);
+    void prepareMusic(in Song song);
     // 开始/继续播放音乐
     void playMusic();
     // 暂停播放音乐
