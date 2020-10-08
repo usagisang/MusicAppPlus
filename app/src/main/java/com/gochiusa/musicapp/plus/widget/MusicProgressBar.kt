@@ -36,6 +36,8 @@ class MusicProgressBar(context: Context, attributeSet: AttributeSet?,
         seekBar = findViewById(R.id.bar_music_progress)
         musicDurationText = findViewById(R.id.tv_music_full_length)
         musicProgressText = findViewById(R.id.tv_music_progress)
+        // 预设SeekBar的最大进度为0
+        setSeekBarMax(0)
     }
 
     /**

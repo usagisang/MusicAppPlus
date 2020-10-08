@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.gochiusa.musicapp.plus.R
 import com.gochiusa.musicapp.plus.broadcast.DownloadReceiver
+import com.gochiusa.musicapp.plus.tasks.stage.StageActivity
 import com.gochiusa.musicapp.plus.util.FragmentManageUtil
 import com.gochiusa.musicapp.plus.widget.BottomMusicWidget
 
@@ -34,6 +35,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun initChildView() {
         bottomMusicWidget = findViewById(R.id.widget_bottom_music)
+        bottomMusicWidget.setOnClickListener {
+            StageActivity.startThisActivity(this, bottomMusicWidget.pause)
+        }
     }
 
     /**
