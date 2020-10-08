@@ -71,7 +71,7 @@ class MusicControlView(context: Context, attributeSet: AttributeSet?,
             }
             // 根据参数定位子View
             childView.layout(
-                paintLeft, t, paintLeft + eachViewWidth, t + childView.measuredHeight
+                paintLeft, 0, paintLeft + eachViewWidth, childView.measuredHeight
             )
             paintLeft += (eachViewWidth + itemMargin)
         }
