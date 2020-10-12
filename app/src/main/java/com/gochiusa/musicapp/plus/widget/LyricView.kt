@@ -9,7 +9,6 @@ import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
 import android.util.AttributeSet
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
@@ -30,17 +29,12 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
     /**
      *  缓存所有歌词的集合
      */
-    var lyricSentenceList: List<Sentence> = listOf()
-        set(value) {
-            field = value
-            // 清除上一次显示歌词留下的缓存
-            invalidate()
-        }
+    private val lyricSentenceList: MutableList<Sentence> = mutableListOf()
 
     /**
      * 当前高亮显示的歌词位置索引，即为当前播放位置
      */
-    var currentLine: Int = 0
+    private var currentLine: Int = 0
 
     /**
      *  指示线指示的歌词位置索引
@@ -167,8 +161,10 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
             // 先重绘
             invalidate()
             // 创建复位动画、指定持续时间
-            scrollAnimator = ScrollAnimator(currentLine).setDuration(300L)
-            scrollAnimator?.start()
+            if (lyricHeightList.isNotEmpty()) {
+                scrollAnimator = ScrollAnimator(currentLine).setDuration(300L)
+                scrollAnimator?.start()
+            }
         }
         // 允许提交复位任务
         canRedraw = true
@@ -198,10 +194,6 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
      *  歌词跳转动画
      */
     private var scrollAnimator: ValueAnimator? = null
-        set(value) {
-            Log.d("this", "now value is null: ${value == null}")
-            field = value
-        }
 
 
     /**
@@ -232,25 +224,31 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
         lyricTextMargin = DEFAULT_LYRIC_TEXT_MARGIN
         drawPadding = DEFAULT_DRAW_MARGIN
         // 初始化手势控制器
-        gestureDetector = GestureDetector(context,object: GestureDetector.SimpleOnGestureListener() {
-            override fun onFling(
-                e1: MotionEvent?,
-                e2: MotionEvent?,
-                velocityX: Float,
-                velocityY: Float): Boolean {
-                // 取消所有动画动作
-                cancelAllAnimation()
-                flingAnimator = FlingAnimator(- velocityY)
-                flingAnimator?.start()
-                return true
-            }
-        })
+        gestureDetector = GestureDetector(context,
+            object: GestureDetector.SimpleOnGestureListener() {
+                override fun onFling(
+                    e1: MotionEvent?, e2: MotionEvent?,
+                    velocityX: Float, velocityY: Float
+                ): Boolean {
+                    // 取消所有动画动作
+                    cancelAllAnimation()
+                    if (hasLyric()) {
+                        flingAnimator = FlingAnimator(-velocityY)
+                        flingAnimator?.start()
+                    }
+                    return true
+                }
+
+                override fun onDoubleTapEvent(e: MotionEvent?): Boolean {
+                    return performClick()
+                }
+            })
     }
 
 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
-        if (canvas == null) {
+        if (canvas == null || this.visibility != VISIBLE) {
             return
         }
         if (loadingLyric) {
@@ -292,27 +290,58 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
     }
 
     /**
-     *  将当前播放位置向下推进，并启动滚动动画来平滑移动
+     *  设置当前播放位置，并启动滚动动画来平滑移动
      */
-    fun scrollToNextLine() {
-        // 检查是否被拖动，需要复位才允许继续滚动
-        if (indicatorLine != currentLine) {
-            return
-        }
+    fun scrollToLine(line: Int) {
         // 检查移动是否越界
-        if (currentLine > lyricSentenceList.size - 2) {
+        if (line > lyricSentenceList.size - 1 || line < 0) {
             return
         }
-        currentLine ++
-        if (scrollAnimator != null) {
-            scrollAnimator = ScrollAnimator(currentLine)
-                .setDuration(50L)
-            scrollAnimator?.startDelay = 50L
-        } else {
-            scrollAnimator = ScrollAnimator(currentLine)
-                .setDuration(50L)
+        // 如果行数没有发生变化，不需要滚动
+        if (currentLine == line) {
+            return
         }
-        scrollAnimator?.start()
+        // 检查是否被拖动，需要复位才允许滚动，避免冲突
+        if (indicatorLine == currentLine) {
+            // 如果没有测量过歌词的高度，无法创建动画
+            if (lyricHeightList.size == 0) {
+                return
+            }
+            val animator = ScrollAnimator(line)
+                .setDuration(300L)
+            scrollAnimator?.let {
+                if (it.isRunning) {
+                    animator.startDelay = 300L
+                }
+            }
+            scrollAnimator = animator
+            scrollAnimator?.start()
+        }
+        currentLine = line
+    }
+
+    /**
+     * 重置LyricView的状态
+     */
+    fun reset() {
+        lyricSentenceList.clear()
+        currentLine = 0
+        indicatorLine = 0
+        lyricHeightList.clear()
+        lyricStaticLayoutMap.clear()
+        scrollY = 0
+    }
+
+    /**
+     * 添加需要显示的歌词
+     */
+    fun addLyric(lyricList: List<Sentence>) {
+        lyricSentenceList.addAll(lyricList)
+        invalidate()
+    }
+
+    fun getSentenceList(): List<Sentence> {
+        return lyricSentenceList
     }
 
     private fun drawHintText(canvas: Canvas, text: String) {
@@ -395,7 +424,8 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
                     // 判断点击区域是否在播放按钮范围内
                     if (event.x > width - contentPadding && event.x < width - drawPadding &&
                         event.y > height / 2 - PLAY_BUTTON_SIZE &&
-                        event.y < height / 2 + PLAY_BUTTON_SIZE) {
+                        event.y < height / 2 + PLAY_BUTTON_SIZE
+                    ) {
                         // 设置当前播放位置
                         currentLine = indicatorLine
                         // 触发播放事件
@@ -413,7 +443,7 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
                 }
             }
             MotionEvent.ACTION_MOVE -> {
-                if (dragMode) {
+                if (hasLyric() && dragMode) {
                     translate(event)
                 }
             }
@@ -487,16 +517,12 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
         scrollAnimator = null
     }
 
-    /**
-     *  清除有关于歌词的所有缓存
-     */
-    private fun clearAllCache() {
-        lyricHeightList.clear()
-        lyricStaticLayoutMap.clear()
-    }
-
     private fun calculateLyricTotalHeight(): Float{
-        return lyricHeightList[lyricHeightList.size - 1] - height / 2 - lyricTextMargin
+        return if (lyricHeightList.isEmpty()) {
+            0F
+        } else {
+            lyricHeightList[lyricHeightList.size - 1] - height / 2 - lyricTextMargin
+        }
     }
 
 
@@ -611,8 +637,7 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
          *
          * @param view 歌词控件
          * @param time 选中播放进度
-         * @return 是否成功消费该事件，如果成功消费，则会更新UI
          */
-        fun onPlayClick(view: LyricView, time: Long): Boolean
+        fun onPlayClick(view: LyricView, time: Long)
     }
 }
