@@ -1,12 +1,15 @@
 package com.gochiusa.musicapp.plus.widget
 
 import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
 import android.util.AttributeSet
+import android.view.View
 import android.view.animation.LinearInterpolator
 import androidx.appcompat.widget.AppCompatImageView
+import kotlin.math.abs
 
 
 class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
@@ -29,7 +32,7 @@ class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
     /**
      *  旋转动画
      */
-    private var rotateAnimator: ObjectAnimator? = null
+    private var rotateAnimator: RotateAnimator? = null
 
     override fun onDraw(canvas: Canvas?) {
         if (drawable is BitmapDrawable) {
@@ -73,23 +76,14 @@ class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
     }
 
     /**
-     *  开启这个View的旋转动画
+     *  开启或继续进行这个View的旋转动画
      * @param duration 旋转一周的时间，默认25s
      */
     fun startAnimator(duration: Long = 25000L) {
         if (rotateAnimator == null) {
-            // 创建新的旋转动画
-            rotateAnimator = ObjectAnimator.ofFloat(this,
-                "rotation", 0f, 360f)
-            rotateAnimator?.let{
-                it.duration = duration
-                // 使用线性插值器
-                it.interpolator = LinearInterpolator()
-                it.repeatCount = ObjectAnimator.INFINITE
-                it.repeatMode = ObjectAnimator.RESTART
-                it.start()
-            }
+           rotateAnimator = RotateAnimator(this, duration)
         }
+        rotateAnimator?.start()
     }
 
     /**
@@ -105,5 +99,39 @@ class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
     fun cancelAnimator() {
         rotateAnimator?.cancel()
         rotateAnimator = null
+    }
+
+    private class RotateAnimator(val view: View, duration: Long): ValueAnimator(),
+        ValueAnimator.AnimatorUpdateListener {
+
+        var lastRotate = 0F
+
+        init {
+            setFloatValues(0F, 360F)
+            addUpdateListener(this)
+            this.duration = duration
+            // 使用线性插值器
+            interpolator = LinearInterpolator()
+            repeatCount = ObjectAnimator.INFINITE
+            repeatMode = ObjectAnimator.RESTART
+        }
+
+        override fun pause() {
+            super.pause()
+            // 重置旋转信息
+            lastRotate = 0F
+        }
+
+        override fun onAnimationUpdate(animation: ValueAnimator?) {
+            val nowRotate = animatedValue as Float
+            var viewRotate = view.rotation
+            viewRotate += abs(nowRotate - lastRotate)
+            if (viewRotate > 360F) {
+                viewRotate -= 360F
+            }
+            lastRotate = nowRotate
+            view.rotation = viewRotate
+        }
+
     }
 }
