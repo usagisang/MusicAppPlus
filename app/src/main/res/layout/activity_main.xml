@@ -17,7 +17,7 @@
     <com.gochiusa.musicapp.plus.widget.BottomMusicWidget
         android:id="@+id/widget_bottom_music"
         android:layout_alignParentBottom="true"
-        android:background="@color/color_main_bottom_background"
+        android:background="@color/colorWhite"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 </RelativeLayout>
