@@ -1,13 +1,19 @@
 package com.gochiusa.musicapp.plus.widget
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.view.View
+import android.view.animation.LinearInterpolator
 import android.widget.RelativeLayout
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.TextView
 import com.gochiusa.musicapp.plus.R
+import com.gochiusa.musicapp.plus.tasks.stage.StageActivity
+import com.gochiusa.musicapp.plus.util.LogUtil
+import com.gochiusa.musicapp.plus.util.TimeCalculator
 
 class MusicProgressBar(context: Context, attributeSet: AttributeSet?,
                        defStyleAttr: Int, defStyleRes: Int):
@@ -17,12 +23,15 @@ class MusicProgressBar(context: Context, attributeSet: AttributeSet?,
     private val musicDurationText: TextView
     private val musicProgressText: TextView
 
+    private var lyricView: LyricView? = null
+
+    private var animator: SeekBarAnimator? = null
+
     constructor(context: Context): this(context, null)
     constructor(context: Context, attributeSet: AttributeSet?):
             this(context, attributeSet, 0)
     constructor(context: Context, attributeSet: AttributeSet?, defStyleAttr: Int):
             this(context, attributeSet, defStyleAttr, 0)
-
 
 
     /**
@@ -41,26 +50,11 @@ class MusicProgressBar(context: Context, attributeSet: AttributeSet?,
     }
 
     /**
-     * 设置歌曲持续时间的文本
-     * @param durationText 歌曲时长（已经经过工具类计算而不是毫秒数）
-     */
-    fun setMusicDurationText(durationText: String) {
-        musicDurationText.text = durationText
-    }
-
-    /**
-     * 设置当前进度的文本
-     * @param progressText  歌曲当前的播放进度（已经经过工具类计算而不是毫秒数）
-     */
-    fun setProgressText(progressText: String) {
-        musicProgressText.text = progressText
-    }
-
-    /**
      * 更新进度条的进度
      */
     fun setSeekBarProgress(progress: Int) {
         seekBar.progress = progress
+        musicProgressText.text = TimeCalculator.calculateSongDuration(progress)
     }
 
     /**
@@ -68,9 +62,70 @@ class MusicProgressBar(context: Context, attributeSet: AttributeSet?,
      */
     fun setSeekBarMax(max: Int) {
         seekBar.max = max
+        musicDurationText.text = TimeCalculator.calculateSongDuration(max)
     }
 
     fun setSeekBarChangeListener(listener: OnSeekBarChangeListener?) {
         seekBar.setOnSeekBarChangeListener(listener)
+    }
+
+    fun bindLyricView(lyricView: LyricView) {
+        this.lyricView = lyricView
+    }
+
+    fun startSeekBarAnimator(connection: StageActivity.MusicServiceConnection) {
+        if (animator == null) {
+            animator = SeekBarAnimator(connection)
+        }
+        animator?.start()
+    }
+
+    fun pauseSeekBarAnimator() {
+        animator?.pause()
+    }
+
+
+    fun cancelSeekBarAnimator() {
+        animator?.cancel()
+        animator = null
+    }
+
+    fun reset() {
+        cancelSeekBarAnimator()
+        setSeekBarProgress(0)
+        setSeekBarMax(0)
+    }
+
+
+    private inner class SeekBarAnimator(val connection: StageActivity.MusicServiceConnection):
+        ValueAnimator(), ValueAnimator.AnimatorUpdateListener {
+
+        init {
+            // 先进行一次更新
+            onAnimationUpdate(this)
+            // 设置持续时间
+            duration = connection.binderInterface?.duration?.toLong() ?: Long.MAX_VALUE
+            // 设置更新的值
+            setIntValues(1, 10000)
+            // 500ms刷新一次
+            setFrameDelay(500L)
+            // 使用线性插值器
+            interpolator = LinearInterpolator()
+            addUpdateListener(this)
+        }
+
+        override fun onAnimationUpdate(animation: ValueAnimator?) {
+            if (seekBarChanging) {
+                return
+            }
+            connection.binderInterface?.let {
+                val progress = it.progress
+                setSeekBarProgress(progress)
+                lyricView?.let {view ->
+                    view.scrollToLine(
+                        TimeCalculator.getIndexWithProgress(progress, view.getSentenceList()))
+                }
+            }
+        }
     }
 }
