@@ -6,27 +6,31 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import com.gochiusa.musicapp.plus.R
+import com.gochiusa.musicapp.plus.entity.EventMessage
 import com.gochiusa.musicapp.plus.entity.Song
-import com.gochiusa.musicapp.plus.util.StringContract
+import com.gochiusa.musicapp.plus.util.PlaylistManager
+import org.greenrobot.eventbus.EventBus
 
 class SearchSongAdapter(list: MutableList<Song>, val context: Context) :
     FootViewAdapter<Song, SearchSongAdapter.ContentViewHolder>(list) {
 
     override fun createContentView(parent: ViewGroup?): NormalViewHolder {
-        val itemView = LayoutInflater.from(context).inflate(R.layout.item_adapter_music_card,
-            parent, false)
-        return ContentViewHolder(itemView)
+        return ContentViewHolder(LayoutInflater.from(context).inflate(
+            R.layout.item_adapter_music_card, parent, false))
     }
 
     override fun onBindContentViewHolder(holder: NormalViewHolder, position: Int) {
         if (holder is ContentViewHolder) {
             val song = getItem(position)
             holder.songNameTextView.text = song.name
-            holder.singerNameTextView.text = song.artists?.joinToString(
-                separator = StringContract.COMMA_SEPARATOR) {
-                it.name ?: ""
-            }
+            holder.singerNameTextView.text = song.getAllArtistString()
             holder.albumNameTextView.text = song.albumName
+            holder.itemView.setOnClickListener {
+                PlaylistManager.removeAllSong()
+                PlaylistManager.addAllSongToPlaylist(getReadOnlyList())
+                PlaylistManager.songPlayingPosition = position
+                EventBus.getDefault().post(EventMessage(EventMessage.PREPARE_MUSIC))
+            }
         }
     }
 

@@ -1,7 +1,6 @@
 package com.gochiusa.musicapp.plus.adapter
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +9,7 @@ import com.gochiusa.musicapp.plus.R
 import com.gochiusa.musicapp.plus.base.PlayOrPauseClickListener
 import com.gochiusa.musicapp.plus.entity.MusicControlHolder
 import com.gochiusa.musicapp.plus.entity.PlayPattern
+import com.gochiusa.musicapp.plus.util.PlaylistManager
 import com.gochiusa.musicapp.plus.widget.MusicControlView
 
 
@@ -18,11 +18,11 @@ class MusicControlAdapter(private val context: Context): MusicControlView.Adapte
     /**
      * 主要的控件
      */
-    private var playOrPauseButton: Button? = null
-    private var playModelButton: Button? = null
-    private var playListButton: Button? = null
-    private var nextSongButton: Button? = null
-    private var lastSongButton: Button? = null
+    lateinit var playOrPauseButton: Button
+    private lateinit var playModelButton: Button
+    private lateinit var playListButton: Button
+    private lateinit var nextSongButton: Button
+    private lateinit var lastSongButton: Button
 
     /**
      * 缓存控件的一些点击事件
@@ -47,13 +47,11 @@ class MusicControlAdapter(private val context: Context): MusicControlView.Adapte
     /**
      * 播放模式的枚举
      */
-    var playPattern: PlayPattern = readPlayPatternData()
+    private var playPattern: PlayPattern = PlaylistManager.playPattern
         private set(value) {
             field = value
             refreshPlayPatternButton(field)
-            writePlayPatternToFile()
         }
-
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MusicControlView.ViewHolder {
         val itemView = LayoutInflater.from(parent.context).inflate(
@@ -75,8 +73,8 @@ class MusicControlAdapter(private val context: Context): MusicControlView.Adapte
                     lastSongButton = holder.button
                     holder.button.setBackgroundResource(
                         R.drawable.ic_widget_skip_preview)
-                    lastSongButtonClickListener?.let {
-                        holder.button.setOnClickListener(it)
+                    holder.button.setOnClickListener {
+                        lastSongButtonClickListener?.onClick(it)
                     }
                 }
                 2 -> {
@@ -88,16 +86,17 @@ class MusicControlAdapter(private val context: Context): MusicControlView.Adapte
                 3 -> {
                     nextSongButton = holder.button
                     holder.button.setBackgroundResource(R.drawable.ic_widget_skip_next)
-                    nextSongButtonClickListener?.let {
-                        holder.button.setOnClickListener(it)
+                    holder.button.setOnClickListener {
+                        nextSongButtonClickListener?.onClick(it)
                     }
                 }
                 4 -> {
                     playListButton = holder.button
                     holder.button.setBackgroundResource(R.drawable.ic_widget_playlist)
-                    playListButtonClickListener?.let {
-                        holder.button.setOnClickListener(it)
+                    holder.button.setOnClickListener {
+                        playListButtonClickListener?.onClick(it)
                     }
+
                 }
 
             }
@@ -117,42 +116,10 @@ class MusicControlAdapter(private val context: Context): MusicControlView.Adapte
      */
     private fun refreshPlayOrPauseButton(isPause: Boolean) {
         if (isPause) {
-            playOrPauseButton?.setBackgroundResource(R.drawable.ic_widget_play_circle)
+            playOrPauseButton.setBackgroundResource(R.drawable.ic_widget_play_circle)
         } else {
-            playOrPauseButton?.setBackgroundResource(R.drawable.ic_widget_pause_circle)
+            playOrPauseButton.setBackgroundResource(R.drawable.ic_widget_pause_circle)
         }
-    }
-
-    /**
-     *  从持久化数据源中读取播放模式的信息
-     */
-    private fun readPlayPatternData(): PlayPattern {
-        val patternPreferences: SharedPreferences = context.getSharedPreferences(
-            PATTERN_SAVE_NAME,Context.MODE_PRIVATE)
-        return when (patternPreferences.getString(PATTERN_NAME_SAVE_KEY, "")) {
-            PlayPattern.SINGLE_SONG_LOOP.name -> {
-                PlayPattern.SINGLE_SONG_LOOP
-            }
-            PlayPattern.LIST_LOOP.name -> {
-                PlayPattern.LIST_LOOP
-            }
-            PlayPattern.RANDOM.name -> {
-                PlayPattern.RANDOM
-            }
-            else -> {
-                PlayPattern.LIST_LOOP
-            }
-        }
-    }
-
-    /**
-     *  将播放模式信息写出到持久化数据源中
-     */
-    private fun writePlayPatternToFile() {
-        val editor: SharedPreferences.Editor =
-            context.getSharedPreferences(PATTERN_SAVE_NAME, Context.MODE_PRIVATE).edit()
-        editor.putString(PATTERN_NAME_SAVE_KEY, playPattern.name)
-        editor.apply()
     }
 
     /**
@@ -161,13 +128,13 @@ class MusicControlAdapter(private val context: Context): MusicControlView.Adapte
     private fun refreshPlayPatternButton(pattern: PlayPattern) {
         when (pattern) {
             PlayPattern.RANDOM -> {
-                playModelButton?.setBackgroundResource(R.drawable.ic_widget_shuffle)
+                playModelButton.setBackgroundResource(R.drawable.ic_widget_shuffle)
             }
             PlayPattern.LIST_LOOP -> {
-                playModelButton?.setBackgroundResource(R.drawable.ic_widget_repeat_list)
+                playModelButton.setBackgroundResource(R.drawable.ic_widget_repeat_list)
             }
             PlayPattern.SINGLE_SONG_LOOP -> {
-                playModelButton?.setBackgroundResource(R.drawable.ic_widget_repeat_one)
+                playModelButton.setBackgroundResource(R.drawable.ic_widget_repeat_one)
             }
         }
     }
@@ -199,20 +166,6 @@ class MusicControlAdapter(private val context: Context): MusicControlView.Adapte
                 listener.onClick(pause)
             }
         }
-    }
-
-
-
-    companion object {
-        /**
-         *  持久化储存播放模式的文件名
-         */
-        private const val PATTERN_SAVE_NAME = "playPattern"
-
-        /**
-         *  持久化储存播放模式的键
-         */
-        private const val PATTERN_NAME_SAVE_KEY = "playPatternKey"
     }
 
     interface PatternButtonClickListener {
