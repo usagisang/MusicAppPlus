@@ -30,7 +30,7 @@
             android:name=".service.MusicService"
             android:enabled="true"
             android:exported="false"
-            android:process="com.gochiusa.musicapp.plus.remote">
+            android:process=":remote">
             <intent-filter>
                 <action android:name="com.gochiusa.musicapp.plus.service.MusicService.SERVICE_START_ACTION"/>
 

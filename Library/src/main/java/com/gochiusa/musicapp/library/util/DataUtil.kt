@@ -23,7 +23,7 @@ object DataUtil {
     private var persistenceCookieJar = PersistenceCookieJar(
         CookieStoreImpl(ContextProvider.context))
 
-    private var okHttpClient: OkHttpClient = OkHttpClient.Builder()
+    var okHttpClient: OkHttpClient = OkHttpClient.Builder()
         .cookieJar(persistenceCookieJar)
         .connectTimeout(RequestConstant.CONNECTION_TIME_OUT, TimeUnit.MILLISECONDS)
         .readTimeout(RequestConstant.READ_TIME_OUT, TimeUnit.MILLISECONDS)
