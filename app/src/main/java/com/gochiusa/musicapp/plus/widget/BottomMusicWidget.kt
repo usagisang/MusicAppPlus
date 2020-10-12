@@ -21,8 +21,8 @@ class BottomMusicWidget(context: Context, attributeSet: AttributeSet?,
 
     val roundImageView: RoundImageView
     val musicNameTextView: TextView
-    val albumNameTextView: TextView
-    private val playOrPauseButton: Button
+    val artistTextView: TextView
+    val playOrPauseButton: Button
     val playlistButton: Button
 
     /**
@@ -44,7 +44,7 @@ class BottomMusicWidget(context: Context, attributeSet: AttributeSet?,
         LayoutInflater.from(context).inflate(R.layout.widget_bottom_music, this)
         roundImageView = findViewById(R.id.iv_widget_album_image)
         musicNameTextView = findViewById(R.id.tv_widget_scroll_music_name)
-        albumNameTextView = findViewById(R.id.tv_widget_bottom_album_name)
+        artistTextView = findViewById(R.id.tv_widget_bottom_artist_name)
         playOrPauseButton = findViewById(R.id.btn_widget_play_or_pause)
         playlistButton = findViewById(R.id.btn_widget_playlist)
         // 绑定播放按钮的点击事件
