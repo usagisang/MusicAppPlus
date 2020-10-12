@@ -18,6 +18,8 @@ interface IBinderInterface {
     int getProgress();
     // 获取当前曲目的持续时长
     int getDuration();
+    // 当前MediaPlayer是否已经准备就绪
+    boolean prepared();
     // 传入预备播放的歌曲的id，让服务准备播放资源，但并不播放。
     // 此方法承诺可以进行高频率的设置，但是只会使用最后提交的歌曲进行播放
     void prepareMusic(in Song song);

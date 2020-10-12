@@ -3,7 +3,11 @@ package com.gochiusa.musicapp.plus.service;
 
 
 interface IPlayerStateListener {
-    void onPrepare();
-    void onError();
+    void onPrepared();
+    void onError(int errorCode);
     void onCompletion();
+
+    void skipNextSong();
+    void returnPreviousSong();
+    void stopSelf();
 }
