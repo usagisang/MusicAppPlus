@@ -25,17 +25,7 @@ fun SongDetailJson.toSongList(): List<Song> {
 }
 
 fun toSongIdsParam(result: SearchSongJson.Result): String {
-    val builder = StringBuilder()
-    result.songs?.let {
-        val sign = ","
-        for (index in it.indices) {
-            if (index < it.size - 1) {
-                builder.append(it[index].id)
-                builder.append(sign)
-            } else {
-                builder.append(it[index].id)
-            }
-        }
-    }
-    return builder.toString()
+    return result.songs?.joinToString(separator = StringContract.COMMA_SEPARATOR) {
+        it.id.toString()
+    } ?: ""
 }

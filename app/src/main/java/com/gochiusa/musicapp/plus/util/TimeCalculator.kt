@@ -1,5 +1,6 @@
 package com.gochiusa.musicapp.plus.util
 
+import com.github.authorfu.lrcparser.parser.Sentence
 import java.lang.StringBuilder
 
 /**
@@ -12,7 +13,7 @@ object TimeCalculator {
 
     @JvmStatic
     fun calculateSongDuration(duration: Int): String {
-        return calculateSongDuration(duration)
+        return calculateSongDuration(duration.toLong())
     }
 
     @JvmStatic
@@ -37,5 +38,14 @@ object TimeCalculator {
         builder.append(second)
         // 使用工具类拼接
         return builder.toString()
+    }
+
+    fun getIndexWithProgress(progress: Int, sentenceList: List<Sentence>): Int {
+        for (sentence in sentenceList) {
+            if (progress < sentence.fromTime) {
+                return sentence.index - 1
+            }
+        }
+        return sentenceList.size - 1
     }
 }
