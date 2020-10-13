@@ -8,6 +8,7 @@ import android.widget.TextView
 import com.gochiusa.musicapp.plus.R
 import com.gochiusa.musicapp.plus.entity.EventMessage
 import com.gochiusa.musicapp.plus.entity.Song
+import com.gochiusa.musicapp.plus.tasks.main.MainActivity.Companion.PREPARE_MUSIC
 import com.gochiusa.musicapp.plus.util.PlaylistManager
 import org.greenrobot.eventbus.EventBus
 
@@ -29,7 +30,7 @@ class SearchSongAdapter(list: MutableList<Song>, val context: Context) :
                 PlaylistManager.removeAllSong()
                 PlaylistManager.addAllSongToPlaylist(getReadOnlyList())
                 PlaylistManager.songPlayingPosition = position
-                EventBus.getDefault().post(EventMessage(EventMessage.PREPARE_MUSIC))
+                EventBus.getDefault().post(EventMessage(PREPARE_MUSIC))
             }
         }
     }

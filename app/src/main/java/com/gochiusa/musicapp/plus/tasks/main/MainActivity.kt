@@ -85,13 +85,13 @@ class MainActivity : AppCompatActivity() {
     @Subscribe(threadMode = ThreadMode.MAIN_ORDERED)
     fun handleEvent(eventMessage: EventMessage) {
         when (eventMessage.messageCode) {
-            EventMessage.PREPARE_MUSIC -> {
+            PREPARE_MUSIC -> {
                 switchSong(PlaylistManager.nowSong())
             }
-            EventMessage.BUTTON_TURN_TO_PAUSE -> {
+            BUTTON_TURN_TO_PAUSE -> {
                 bottomMusicWidget.pause = true
             }
-            EventMessage.BUTTON_TURN_TO_PLAY -> {
+            BUTTON_TURN_TO_PLAY -> {
                 bottomMusicWidget.pause = false
             }
         }
@@ -230,5 +230,9 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val PLAY_URL_REQUEST_ERROR_TIP = "因版权问题暂时无法播放"
         private const val OTHER_ERROR_TIP = "播放失败"
+
+        const val PREPARE_MUSIC = 1
+        const val BUTTON_TURN_TO_PAUSE = 2
+        const val BUTTON_TURN_TO_PLAY = 3
     }
 }

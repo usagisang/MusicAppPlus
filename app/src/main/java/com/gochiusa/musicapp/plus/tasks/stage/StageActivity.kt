@@ -28,6 +28,8 @@ import com.gochiusa.musicapp.plus.service.PlayStateListenerImpl.Companion.ON_ERR
 import com.gochiusa.musicapp.plus.service.PlayStateListenerImpl.Companion.ON_PREPARED
 import com.gochiusa.musicapp.plus.service.PlayStateListenerImpl.Companion.RETURN_PREVIOUS_SONG
 import com.gochiusa.musicapp.plus.service.PlayStateListenerImpl.Companion.SKIP_NEXT_SONG
+import com.gochiusa.musicapp.plus.tasks.main.MainActivity.Companion.BUTTON_TURN_TO_PAUSE
+import com.gochiusa.musicapp.plus.tasks.main.MainActivity.Companion.BUTTON_TURN_TO_PLAY
 import com.gochiusa.musicapp.plus.util.LogUtil
 import com.gochiusa.musicapp.plus.util.PlaylistManager
 import com.gochiusa.musicapp.plus.util.TimeCalculator
@@ -124,12 +126,12 @@ class StageActivity : AppCompatActivity() {
                     // 暂停进度条刷新
                     musicProgressBar.pauseSeekBarAnimator()
                     // 发送信息
-                    EventBus.getDefault().post(EventMessage(EventMessage.BUTTON_TURN_TO_PAUSE))
+                    EventBus.getDefault().post(EventMessage(BUTTON_TURN_TO_PAUSE))
                 } else {
                     musicServiceConnection.binderInterface?.playMusic()
                     roundImageView.startAnimator()
                     musicProgressBar.startSeekBarAnimator(musicServiceConnection)
-                    EventBus.getDefault().post(EventMessage(EventMessage.BUTTON_TURN_TO_PLAY))
+                    EventBus.getDefault().post(EventMessage(BUTTON_TURN_TO_PLAY))
                 }
 
             }
