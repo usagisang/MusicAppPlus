@@ -22,6 +22,8 @@
             android:layout_height="wrap_content"
             tools:text="青い空のカミュ"
             android:layout_marginStart="16dp"
+            android:lines="1"
+            android:ellipsize="end"
             android:layout_toEndOf="@+id/btn_stage_back"
             android:textColor="@color/colorBlack"
             android:textSize="17.5sp"/>
@@ -32,6 +34,8 @@
             android:layout_below="@+id/tv_stage_music_name"
             android:layout_marginStart="16dp"
             android:layout_marginTop="3dp"
+            android:lines="1"
+            android:ellipsize="end"
             android:layout_toEndOf="@+id/btn_stage_back"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
