@@ -27,6 +27,8 @@ interface IBinderInterface {
     void playMusic();
     // 暂停播放音乐
     void pauseMusic();
+    // 重置播放器
+    void reset();
     // 注册监听
     void registerPlayerStateListener(IPlayerStateListener listener);
     // 取消监听

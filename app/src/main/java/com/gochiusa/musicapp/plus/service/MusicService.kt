@@ -249,19 +249,29 @@ class MusicService : Service() {
     }
 
     /**
-     * 从歌曲实体类中读取信息，并更新到通知上
+     * 从歌曲实体类中读取信息，并更新到通知上，如果传入的歌曲为空，则清除通知上的信息
      */
-    private fun resetNotification(song: Song) {
-        setNotificationViewText(song.name ?: "", song.getAllArtistString())
-        // 使用框架加载专辑位图
-        Picasso.get().load(song.albumPicUrl + SMALL_BITMAP_PARAM)
-            .error(R.drawable.ic_widget_album).into(smallRemoteViews, R.id.iv_service_small_song_album,
-                PLAY_NOTIFICATION_ID, notification)
-        Picasso.get().load(song.albumPicUrl + BIG_BITMAP_PARAM)
-            .error(R.drawable.ic_widget_album).into(bigRemoteViews, R.id.iv_service_album_image,
-                PLAY_NOTIFICATION_ID, notification)
-        // 刷新通知显示
-        updateNotification()
+    private fun resetNotification(song: Song?) {
+        if (song != null) {
+            setNotificationViewText(song.name ?: "", song.getAllArtistString())
+            // 使用框架加载专辑位图
+            Picasso.get().load(song.albumPicUrl + SMALL_BITMAP_PARAM)
+                .error(R.drawable.ic_widget_album).into(
+                    smallRemoteViews, R.id.iv_service_small_song_album,
+                    PLAY_NOTIFICATION_ID, notification
+                )
+            Picasso.get().load(song.albumPicUrl + BIG_BITMAP_PARAM)
+                .error(R.drawable.ic_widget_album).into(
+                    bigRemoteViews, R.id.iv_service_album_image,
+                    PLAY_NOTIFICATION_ID, notification
+                )
+        } else {
+            setNotificationViewText("", "")
+            smallRemoteViews.setImageViewResource(R.id.iv_service_small_song_album,
+                R.drawable.ic_widget_album)
+            bigRemoteViews.setImageViewResource(R.id.iv_service_album_image,
+                R.drawable.ic_widget_album)
+        }
     }
 
     /**
@@ -318,13 +328,14 @@ class MusicService : Service() {
         }
         mediaPlayer.setOnErrorListener { _: MediaPlayer, what: Int, _: Int ->
             preparingSong = null
+            resetMediaPlayer()
             setButtonPlayOrPause(false)
             updateNotification()
-            resetMediaPlayer()
             listenerErrorUpdate(what)
             true
         }
     }
+
     private fun resetMediaPlayer() {
         prepared = false
         mediaPlayer.reset()
@@ -445,6 +456,14 @@ class MusicService : Service() {
             return prepared
         }
 
+        override fun reset() {
+            resetMediaPlayer()
+            // 重置通知信息
+            resetNotification(null)
+            setButtonPlayOrPause(false)
+            updateNotification()
+        }
+
         override fun registerPlayerStateListener(listener: IPlayerStateListener?) {
             remoteCallbackList.register(listener)
         }
@@ -482,6 +501,7 @@ class MusicService : Service() {
 
         override fun prepareMusic(song: Song?) {
             if (song == null) {
+                resetMediaPlayer()
                 listenerErrorUpdate(PREPARE_SONG_NULL)
                 return
             }
@@ -524,6 +544,7 @@ class MusicService : Service() {
             return when (msg.what) {
                 RESET_NOTIFICATION -> {
                     resetNotification(msg.obj as Song)
+                    updateNotification()
                     true
                 }
                 else -> {
