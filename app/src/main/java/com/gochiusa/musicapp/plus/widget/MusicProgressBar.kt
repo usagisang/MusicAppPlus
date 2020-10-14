@@ -4,7 +4,6 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import android.view.View
 import android.view.animation.LinearInterpolator
 import android.widget.RelativeLayout
 import android.widget.SeekBar
@@ -12,7 +11,6 @@ import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.TextView
 import com.gochiusa.musicapp.plus.R
 import com.gochiusa.musicapp.plus.tasks.stage.StageActivity
-import com.gochiusa.musicapp.plus.util.LogUtil
 import com.gochiusa.musicapp.plus.util.TimeCalculator
 
 class MusicProgressBar(context: Context, attributeSet: AttributeSet?,
@@ -54,6 +52,13 @@ class MusicProgressBar(context: Context, attributeSet: AttributeSet?,
      */
     fun setSeekBarProgress(progress: Int) {
         seekBar.progress = progress
+        setProgressText(progress)
+    }
+
+    /**
+     * 更新显示进度的文本
+     */
+    fun setProgressText(progress: Int) {
         musicProgressText.text = TimeCalculator.calculateSongDuration(progress)
     }
 
@@ -115,12 +120,12 @@ class MusicProgressBar(context: Context, attributeSet: AttributeSet?,
         }
 
         override fun onAnimationUpdate(animation: ValueAnimator?) {
-            if (seekBarChanging) {
-                return
-            }
             connection.binderInterface?.let {
                 val progress = it.progress
-                setSeekBarProgress(progress)
+                // 如果SeekBar没有被拖动，更新SeekBar的进度
+                if (! seekBarChanging) {
+                    setSeekBarProgress(progress)
+                }
                 lyricView?.let {view ->
                     view.scrollToLine(
                         TimeCalculator.getIndexWithProgress(progress, view.getSentenceList()))

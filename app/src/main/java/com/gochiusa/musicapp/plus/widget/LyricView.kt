@@ -46,7 +46,7 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
      */
     var contentPadding: Float = 0f
         set(value) {
-            field = WidgetUtil.dpToPx(value, density)
+            field = WidgetUtil.dpToPx(value)
         }
 
     /**
@@ -54,7 +54,7 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
      */
     var lyricTextMargin = 0f
         set(value) {
-            field = WidgetUtil.dpToPx(value, density)
+            field = WidgetUtil.dpToPx(value)
         }
 
     /**
@@ -62,7 +62,7 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
      */
     var drawPadding = 0f
         set(value) {
-            field = WidgetUtil.dpToPx(value, density)
+            field = WidgetUtil.dpToPx(value)
         }
 
     /**
@@ -78,11 +78,6 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
      *  点击播放图案后的点击事件
      */
     var onPlayClickListener: OnPlayClickListener? = null
-
-    /**
-     * 密度比例因子
-     */
-    private val density: Float = context.resources.displayMetrics.density
 
     /**
      *  字体sp与px的比例
@@ -318,6 +313,7 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
             scrollAnimator?.start()
         }
         currentLine = line
+        indicatorLine = line
     }
 
     /**
