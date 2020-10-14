@@ -8,4 +8,8 @@
         <item name="android:textSize">@dimen/tabTextSize</item>
     </style>
     <dimen name="tabTextSize">15sp</dimen>
+    <style name="PopupAnimation">
+        <item name="android:windowEnterAnimation">@anim/widget_popup_show_in</item>
+        <item name="android:windowExitAnimation">@anim/widget_popup_dismiss_out</item>
+    </style>
 </resources>
