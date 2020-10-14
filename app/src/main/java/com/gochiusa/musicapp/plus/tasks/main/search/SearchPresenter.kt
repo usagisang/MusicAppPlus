@@ -71,6 +71,7 @@ class SearchPresenter(view: SearchContract.View):
 
     override fun refresh() {
         if (lastKeyword.isEmpty()) {
+            view?.searchFailure(false)
             return
         }
         offsetCalculator.offset = 0

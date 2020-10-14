@@ -1,6 +1,5 @@
 package com.gochiusa.musicapp.plus.adapter
 
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,7 +12,7 @@ import com.gochiusa.musicapp.plus.util.PlaylistManager
 import com.gochiusa.musicapp.plus.widget.MusicControlView
 
 
-class MusicControlAdapter(private val context: Context): MusicControlView.Adapter() {
+class MusicControlAdapter : MusicControlView.Adapter() {
 
     /**
      * 主要的控件
@@ -27,7 +26,7 @@ class MusicControlAdapter(private val context: Context): MusicControlView.Adapte
     /**
      * 缓存控件的一些点击事件
      */
-    var playListButtonClickListener: View.OnClickListener? = null
+    var playlistButtonClickListener: View.OnClickListener? = null
     var nextSongButtonClickListener: View.OnClickListener? = null
     var lastSongButtonClickListener: View.OnClickListener? = null
 
@@ -94,7 +93,7 @@ class MusicControlAdapter(private val context: Context): MusicControlView.Adapte
                     playListButton = holder.button
                     holder.button.setBackgroundResource(R.drawable.ic_widget_playlist)
                     holder.button.setOnClickListener {
-                        playListButtonClickListener?.onClick(it)
+                        playlistButtonClickListener?.onClick(it)
                     }
 
                 }

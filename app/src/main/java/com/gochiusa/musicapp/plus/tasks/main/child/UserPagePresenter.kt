@@ -6,6 +6,7 @@ import com.gochiusa.musicapp.library.util.DataUtil
 import com.gochiusa.musicapp.plus.base.BasePresenterImpl
 import com.gochiusa.musicapp.plus.entity.User
 import com.gochiusa.musicapp.plus.util.LogUtil
+import com.gochiusa.musicapp.plus.util.UserManager
 
 class UserPagePresenter(view: UserContract.View):
     BasePresenterImpl<UserContract.View>(view), UserContract.Presenter {
@@ -14,8 +15,10 @@ class UserPagePresenter(view: UserContract.View):
             override fun callback(data: UserJson) {
                 view?.showLoading(false)
                 data.profile?.let {
-                    view?.loginSuccess(User(it.userId ?: 0L,
-                        it.nickname ?: "", it.avatarUrl ?: ""))
+                    val user = User(it.userId ?: 0L, it.nickname ?: "",
+                        it.avatarUrl ?: "")
+                    UserManager.user = user
+                    view?.loginSuccess(user)
                 }
             }
             override fun error(errorMsg: String) {
@@ -30,8 +33,10 @@ class UserPagePresenter(view: UserContract.View):
             override fun callback(data: UserJson) {
                 data.profile?.let {
                     view?.showLoading(false)
-                    view?.loginSuccess(User(it.userId ?: 0L,
-                        it.nickname, it.avatarUrl))
+                    val user = User(it.userId ?: 0L, it.nickname ?: "",
+                        it.avatarUrl ?: "")
+                    UserManager.user = user
+                    view?.loginSuccess(user)
                 }
             }
 
@@ -47,6 +52,7 @@ class UserPagePresenter(view: UserContract.View):
 
     override fun logout() {
         DataUtil.loginApi.logout()
+        UserManager.user = null
         DataUtil.clearAllCookies()
     }
 

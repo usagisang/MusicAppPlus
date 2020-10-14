@@ -11,7 +11,7 @@ object PlaylistManager {
     /**
      * 播放列表
      */
-    val playlist: MutableList<Song> = mutableListOf()
+    private val playlist: MutableList<Song> = mutableListOf()
 
     /**
      *  当前播放模式，默认是列表循环
@@ -99,6 +99,25 @@ object PlaylistManager {
         playlist.addAll(otherList)
     }
 
+    fun getPlaylist(): List<Song> {
+        return playlist
+    }
+
+    fun removeSong(position: Int) {
+        if (isPositionReasonable(position)) {
+            if (songPlayingPosition > position) {
+                songPlayingPosition--
+            } else if (songPlayingPosition == position && songPlayingPosition > playlist.size - 2) {
+                songPlayingPosition = 0
+            }
+            playlist.removeAt(position)
+        }
+    }
+
+    fun removeSong(song: Song) {
+        removeSong(playlist.indexOf(song))
+    }
+
     /**
      * 移除列表的所有歌曲
      */
@@ -135,6 +154,16 @@ object PlaylistManager {
                 playAtNextDeque.add(songPlayingPosition + i)
             }
         }
+    }
+
+    /**
+     *  将播放模式信息写出到持久化数据源中
+     */
+    fun writePlayPatternToFile() {
+        val editor: SharedPreferences.Editor = context.getSharedPreferences(PATTERN_SAVE_NAME,
+            Context.MODE_PRIVATE).edit()
+        editor.putString(PATTERN_NAME_SAVE_KEY, playPattern.name)
+        editor.apply()
     }
 
     /**
@@ -227,8 +256,8 @@ object PlaylistManager {
      */
     private fun calculatorRandomNext(): Int {
         var nextPosition: Int
-        // 如果播放列表只有一首歌，使用列表循环的逻辑处理(防止下面的随机逻辑产生bug)
-        if (playlist.size == 1) {
+        // 如果播放列表少于等于一首歌，使用列表循环的逻辑处理(防止下面的随机逻辑产生bug)
+        if (playlist.size < 2) {
             return calculatorListLoopNext()
         }
         // 如果随机数是当前位置就再生成一遍
@@ -243,7 +272,8 @@ object PlaylistManager {
      */
     private fun readPlayPatternData(): PlayPattern {
         val patternPreferences: SharedPreferences = context.getSharedPreferences(
-            PATTERN_SAVE_NAME, Context.MODE_PRIVATE)
+            PATTERN_SAVE_NAME, Context.MODE_PRIVATE
+        )
         return when (patternPreferences.getString(PATTERN_NAME_SAVE_KEY, "")) {
             PlayPattern.SINGLE_SONG_LOOP.name -> {
                 PlayPattern.SINGLE_SONG_LOOP
@@ -258,15 +288,5 @@ object PlaylistManager {
                 PlayPattern.LIST_LOOP
             }
         }
-    }
-
-    /**
-     *  将播放模式信息写出到持久化数据源中
-     */
-    fun writePlayPatternToFile() {
-        val editor: SharedPreferences.Editor = context.getSharedPreferences(PATTERN_SAVE_NAME,
-            Context.MODE_PRIVATE).edit()
-        editor.putString(PATTERN_NAME_SAVE_KEY, playPattern.name)
-        editor.apply()
     }
 }

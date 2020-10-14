@@ -4,9 +4,13 @@ import android.app.ActivityManager
 import android.app.DownloadManager
 import android.content.*
 import android.os.*
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.gochiusa.musicapp.plus.R
+import com.gochiusa.musicapp.plus.adapter.PlaylistAdapter
 import com.gochiusa.musicapp.plus.base.PlayOrPauseClickListener
 import com.gochiusa.musicapp.plus.broadcast.DownloadReceiver
 import com.gochiusa.musicapp.plus.entity.EventMessage
@@ -24,7 +28,9 @@ import com.gochiusa.musicapp.plus.tasks.stage.StageActivity
 import com.gochiusa.musicapp.plus.util.FragmentManageUtil
 import com.gochiusa.musicapp.plus.util.LogUtil
 import com.gochiusa.musicapp.plus.util.PlaylistManager
+import com.gochiusa.musicapp.plus.util.WidgetUtil
 import com.gochiusa.musicapp.plus.widget.BottomMusicWidget
+import com.gochiusa.musicapp.plus.widget.PopupPlaylist
 import com.squareup.picasso.Picasso
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -35,10 +41,16 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity() {
 
     private lateinit var bottomMusicWidget: BottomMusicWidget
+
+    private lateinit var playlistView: View
+
     private lateinit var downloadReceiver: DownloadReceiver
+
     private val musicServiceConnection = MusicServiceConnection()
+    private lateinit var popupPlaylist: PopupPlaylist
 
     private val listener = PlayStateListenerImpl(Handler(Looper.getMainLooper(), Callback()))
+
 
     /**
      * 标识与服务断开之后是否需要重连
@@ -82,7 +94,15 @@ class MainActivity : AppCompatActivity() {
         unregisterReceiver(downloadReceiver)
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN_ORDERED)
+    override fun onBackPressed() {
+        if (popupPlaylist.isShowing) {
+            popupPlaylist.dismiss()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleEvent(eventMessage: EventMessage) {
         when (eventMessage.messageCode) {
             PREPARE_MUSIC -> {
@@ -94,11 +114,39 @@ class MainActivity : AppCompatActivity() {
             BUTTON_TURN_TO_PLAY -> {
                 bottomMusicWidget.pause = false
             }
+            PlaylistAdapter.REPLAY_NOW_SONG -> {
+                resetChildView()
+                refreshSongInformation(PlaylistManager.nowSong())
+                // 如果没有显示在前端，不需要执行下面的逻辑
+                if (! foreground) {
+                    return
+                }
+                if (PlaylistManager.isPlayListEmpty) {
+                    musicServiceConnection.binderInterface.reset()
+                } else {
+                    musicServiceConnection.binderInterface.prepareMusic(
+                        PlaylistManager.nowSong())
+                }
+            }
         }
     }
 
     private fun initChildView() {
         bottomMusicWidget = findViewById(R.id.widget_bottom_music)
+        playlistView = layoutInflater.inflate(R.layout.layout_playlist, null)
+        popupPlaylist = PopupPlaylist(window, playlistView, ViewGroup.LayoutParams.MATCH_PARENT,
+            WidgetUtil.dpToPx(400).toInt())
+        initBottomWidget()
+        // 注册播放列表的View中的清空按钮的事件
+        popupPlaylist.clearButtonClickListener = View.OnClickListener {
+            PlaylistManager.removeAllSong()
+            resetChildView()
+            refreshSongInformation(null)
+            musicServiceConnection.binderInterface.reset()
+        }
+    }
+
+    private fun initBottomWidget() {
         bottomMusicWidget.setOnClickListener {
             StageActivity.startThisActivity(this, bottomMusicWidget.pause)
         }
@@ -113,6 +161,9 @@ class MainActivity : AppCompatActivity() {
         })
         // 先禁止按钮的点击
         bottomMusicWidget.playOrPauseButton.isClickable = false
+        bottomMusicWidget.playlistButton.setOnClickListener {
+            popupPlaylist.show(bottomMusicWidget, Gravity.BOTTOM, 0, 0)
+        }
     }
 
     /**
@@ -135,25 +186,39 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * 刷新显示的歌曲信息
+     * 刷新或清除显示的歌曲信息
      */
-    private fun refreshSongInformation(song: Song) {
-        // 加载专辑图片
-        Picasso.get().load(song.albumPicUrl).fit().into(bottomMusicWidget.roundImageView)
-        // 刷新底部栏信息
-        bottomMusicWidget.artistTextView.text = song.getAllArtistString()
-        bottomMusicWidget.musicNameTextView.text = song.name
+    private fun refreshSongInformation(song: Song?) {
+        if (song != null) {
+            // 加载专辑图片
+            Picasso.get().load(song.albumPicUrl).fit().into(bottomMusicWidget.roundImageView)
+            // 刷新底部栏信息
+            bottomMusicWidget.artistTextView.text = song.getAllArtistString()
+            bottomMusicWidget.musicNameTextView.text = song.name
+        } else {
+            bottomMusicWidget.roundImageView.setImageResource(R.drawable.ic_widget_album)
+            // 刷新底部栏信息
+            bottomMusicWidget.artistTextView.text = ""
+            bottomMusicWidget.musicNameTextView.text = ""
+        }
+    }
+
+    /**
+     * 获取数据失败或者准备阶段无法获取数据时，重新恢复一些控件的初始状态
+     */
+    private fun resetChildView() {
+        // 按钮换为暂停状态
+        bottomMusicWidget.pause = true
+        // 暂时禁止按钮的点击
+        bottomMusicWidget.playOrPauseButton.isClickable = false
     }
 
     /**
      * 辅助方法，切换歌曲时应当进行的操作
      */
     private fun switchSong(song: Song?) {
-        // 按钮换为暂停状态
-        bottomMusicWidget.pause = true
-        // 暂时禁止按钮的点击
-        bottomMusicWidget.playOrPauseButton.isClickable = false
-        song?.let { refreshSongInformation(song) }
+        resetChildView()
+        refreshSongInformation(song)
         if (foreground) {
             musicServiceConnection.binderInterface.prepareMusic(song)
         }
@@ -185,7 +250,7 @@ class MainActivity : AppCompatActivity() {
                     if (foreground) {
                         musicServiceConnection.binderInterface.playMusic()
                     } else {
-                        PlaylistManager.nowSong()?.let { refreshSongInformation(it) }
+                        refreshSongInformation(PlaylistManager.nowSong())
                     }
                 }
                 ON_ERROR -> {
@@ -200,10 +265,8 @@ class MainActivity : AppCompatActivity() {
                                 OTHER_ERROR_TIP, Toast.LENGTH_SHORT).show()
                         }
                     }
-                    PlaylistManager.nowSong()?.let { refreshSongInformation(it) }
-                    bottomMusicWidget.pause = true
-                    // 暂时禁止按钮的点击
-                    bottomMusicWidget.playOrPauseButton.isClickable = false
+                    refreshSongInformation(PlaylistManager.nowSong())
+                    resetChildView()
                 }
                 RETURN_PREVIOUS_SONG -> {
                     switchSong(PlaylistManager.previousSong())

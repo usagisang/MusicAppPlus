@@ -75,7 +75,8 @@ class RecommendPageFragment: BaseFragment<RecommendContract.Presenter>(),
             RecyclerView.HORIZONTAL, false)
         recyclerView.adapter = buttonAdapter
         buttonAdapter.onButtonClickListener = this
-        recyclerView.addItemDecoration(DefaultDecoration())
+        recyclerView.addItemDecoration(DefaultDecoration(
+            15, 20, 15, 20))
     }
 
     override fun onClick(position: Int) {

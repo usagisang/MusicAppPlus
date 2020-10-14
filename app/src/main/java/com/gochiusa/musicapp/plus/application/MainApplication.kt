@@ -17,6 +17,7 @@ class MainApplication: Application() {
                 as InputMethodManager
         downloadManager = applicationContext.getSystemService(Context.DOWNLOAD_SERVICE)
                 as DownloadManager
+        density = applicationContext.resources.displayMetrics.density
     }
 
 
@@ -24,6 +25,8 @@ class MainApplication: Application() {
         lateinit var inputMethodManager: InputMethodManager
             private set
         lateinit var downloadManager: DownloadManager
+            private set
+        var density: Float = 1F
             private set
     }
 }

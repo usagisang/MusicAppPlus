@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.*
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.SeekBar
 import android.widget.TextView
@@ -16,6 +18,7 @@ import com.github.authorfu.lrcparser.parser.LyricParser
 import com.gochiusa.musicapp.library.util.DataUtil
 import com.gochiusa.musicapp.plus.R
 import com.gochiusa.musicapp.plus.adapter.MusicControlAdapter
+import com.gochiusa.musicapp.plus.adapter.PlaylistAdapter
 import com.gochiusa.musicapp.plus.base.PlayOrPauseClickListener
 import com.gochiusa.musicapp.plus.entity.EventMessage
 import com.gochiusa.musicapp.plus.entity.PlayPattern
@@ -33,12 +36,12 @@ import com.gochiusa.musicapp.plus.tasks.main.MainActivity.Companion.BUTTON_TURN_
 import com.gochiusa.musicapp.plus.util.LogUtil
 import com.gochiusa.musicapp.plus.util.PlaylistManager
 import com.gochiusa.musicapp.plus.util.TimeCalculator
-import com.gochiusa.musicapp.plus.widget.LyricView
-import com.gochiusa.musicapp.plus.widget.MusicControlView
-import com.gochiusa.musicapp.plus.widget.MusicProgressBar
-import com.gochiusa.musicapp.plus.widget.RoundImageView
+import com.gochiusa.musicapp.plus.util.WidgetUtil
+import com.gochiusa.musicapp.plus.widget.*
 import com.squareup.picasso.Picasso
 import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 import java.io.BufferedReader
 import java.io.StringReader
 
@@ -52,10 +55,13 @@ class StageActivity : AppCompatActivity() {
     private lateinit var musicControlView: MusicControlView
     private lateinit var lyricView: LyricView
 
+    private lateinit var playlistView: View
+    private lateinit var popupPlaylist: PopupPlaylist
+
     /**
      * 底部控制栏的适配器
      */
-    private val controlAdapter = MusicControlAdapter(this)
+    private val controlAdapter = MusicControlAdapter()
 
     /**
      * Service回调监听器
@@ -69,16 +75,34 @@ class StageActivity : AppCompatActivity() {
         setContentView(R.layout.activity_stage)
         initChildView()
         initService()
+        EventBus.getDefault().register(this)
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        EventBus.getDefault().unregister(this)
         musicProgressBar.cancelSeekBarAnimator()
         musicServiceConnection.binderInterface?.let {
             it.setScreenOn(false)
             it.unregisterPlayerStateListener(listener)
         }
         unbindService(musicServiceConnection)
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun handleEvent(eventMessage: EventMessage) {
+        when(eventMessage.messageCode) {
+            PlaylistAdapter.REPLAY_NOW_SONG -> {
+                val song = PlaylistManager.nowSong()
+                refreshSongInformation(song)
+                resetChildView(song != null)
+                if (PlaylistManager.isPlayListEmpty) {
+                    musicServiceConnection.binderInterface?.reset()
+                } else {
+                    musicServiceConnection.binderInterface?.prepareMusic(song)
+                }
+            }
+        }
     }
 
     private fun initChildView() {
@@ -89,6 +113,9 @@ class StageActivity : AppCompatActivity() {
         musicProgressBar = findViewById(R.id.widget_stage_music_progress_bar)
         musicControlView = findViewById(R.id.widget_stage_music_control)
         lyricView = findViewById(R.id.lyric_view)
+        playlistView = layoutInflater.inflate(R.layout.layout_playlist, null)
+        popupPlaylist = PopupPlaylist(window, playlistView, ViewGroup.LayoutParams.MATCH_PARENT,
+            WidgetUtil.dpToPx(400).toInt())
 
         musicControlView.adapter = controlAdapter
         // 禁用按钮的点击
@@ -148,11 +175,11 @@ class StageActivity : AppCompatActivity() {
         }
         // 注册进度条的监听接口
         musicProgressBar.setSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            private var musicProgress = 0
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
-                    lyricView.scrollToLine(TimeCalculator.getIndexWithProgress(progress,
-                        lyricView.getSentenceList()))
-                    musicServiceConnection.binderInterface?.progress = progress
+                    musicProgress = progress
+                    musicProgressBar.setProgressText(progress)
                 }
             }
 
@@ -162,6 +189,10 @@ class StageActivity : AppCompatActivity() {
 
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 musicProgressBar.seekBarChanging = false
+                lyricView.scrollToLine(TimeCalculator.getIndexWithProgress(musicProgress,
+                    lyricView.getSentenceList()))
+                musicServiceConnection.binderInterface?.progress = musicProgress
+                musicProgress = 0
             }
 
         })
@@ -171,6 +202,17 @@ class StageActivity : AppCompatActivity() {
                 musicServiceConnection.binderInterface?.progress = time.toInt()
                 musicProgressBar.setSeekBarProgress(time.toInt())
             }
+        }
+        // 注册播放列表按钮的点击事件
+        controlAdapter.playlistButtonClickListener = View.OnClickListener {
+            popupPlaylist.show(musicControlView, Gravity.BOTTOM, 0, 0)
+        }
+        // 注册播放列表的View中的清空按钮的事件
+        popupPlaylist.clearButtonClickListener = View.OnClickListener {
+            PlaylistManager.removeAllSong()
+            resetChildView(false)
+            refreshSongInformation(null)
+            EventBus.getDefault().post(EventMessage(PlaylistAdapter.REPLAY_NOW_SONG))
         }
     }
 
@@ -187,19 +229,27 @@ class StageActivity : AppCompatActivity() {
     /**
      * 刷新显示的歌曲基本信息
      */
-    private fun refreshSongInformation(song: Song) {
-        songNameTextView.text = song.name
-        artistTextView.text = song.getAllArtistString()
-        // 加载专辑图片
-        Picasso.get().load(song.albumPicUrl).fit().into(roundImageView)
+    private fun refreshSongInformation(song: Song?) {
+        if (song != null) {
+            songNameTextView.text = song.name
+            artistTextView.text = song.getAllArtistString()
+            // 加载专辑图片
+            Picasso.get().load(song.albumPicUrl).fit().into(roundImageView)
+        } else {
+            songNameTextView.text = ""
+            artistTextView.text = ""
+            roundImageView.setImageResource(R.drawable.ic_widget_album)
+        }
     }
 
     /**
-     * 刷新控件的状态，开启或关闭一些动画等
+     * 在歌曲加载成功之后，使用远端的信息更新一些控件，开启或关闭一些动画等
      */
-    private fun refreshChildView(song: Song, iBinderInterface: IBinderInterface, pause: Boolean) {
+    private fun updateChildView(song: Song, iBinderInterface: IBinderInterface, pause: Boolean) {
         controlAdapter.pause = pause
         if (iBinderInterface.prepared()) {
+            // 允许点击播放按钮
+            controlAdapter.playOrPauseButton.isClickable = true
             // 更新进度条的显示
             musicProgressBar.setSeekBarMax(iBinderInterface.duration)
             musicProgressBar.setSeekBarProgress(iBinderInterface.progress)
@@ -213,6 +263,21 @@ class StageActivity : AppCompatActivity() {
             }
             prepareLyric(song)
         }
+    }
+
+    /**
+     * 获取数据失败或者准备阶段无法获取数据时，重新恢复一些控件的初始状态
+     */
+    private fun resetChildView(lyricLoading: Boolean) {
+        // 按钮换为暂停状态
+        controlAdapter.pause = true
+        // 禁止按钮的点击
+        controlAdapter.playOrPauseButton.isClickable = false
+        lyricView.loadingLyric = lyricLoading
+        lyricView.reset()
+        musicProgressBar.reset()
+        // 停止旋转
+        roundImageView.cancelAnimator()
     }
 
     /**
@@ -245,18 +310,60 @@ class StageActivity : AppCompatActivity() {
      * 辅助方法，切换歌曲时应当进行的操作
      */
     private fun switchSong(song: Song?) {
-        // 按钮换为暂停状态
-        controlAdapter.pause = true
-        // 暂时禁止按钮的点击
-        controlAdapter.playOrPauseButton.isClickable = false
-        lyricView.loadingLyric = true
-        lyricView.reset()
-        musicProgressBar.reset()
-        // 停止旋转
-        roundImageView.cancelAnimator()
+        resetChildView(song != null)
         // 刷新显示的歌曲基本信息
-        song?.let { refreshSongInformation(it) }
+        refreshSongInformation(song)
         musicServiceConnection.binderInterface?.prepareMusic(song)
+    }
+
+    inner class MusicServiceConnection: ServiceConnection {
+        var binderInterface: IBinderInterface? = null
+        override fun onServiceDisconnected(name: ComponentName?) {
+            binderInterface = null
+        }
+
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = IBinderInterface.Stub.asInterface(service)
+            binderInterface = binder
+            val nowSong = PlaylistManager.nowSong()
+            if (nowSong != null) {
+                refreshSongInformation(nowSong)
+                updateChildView(nowSong, binder, intent.getBooleanExtra(IS_MUSIC_PAUSE,
+                    true))
+            }
+            // 注册监听器
+            binder.registerPlayerStateListener(listener)
+            // 设置循环模式
+            binder.setLooping(PlaylistManager.playPattern == PlayPattern.SINGLE_SONG_LOOP)
+            binder.setScreenOn(true)
+        }
+    }
+
+    private inner class Callback: Handler.Callback {
+        override fun handleMessage(msg: Message): Boolean {
+            when (msg.what) {
+                ON_PREPARED -> {
+                    musicServiceConnection.binderInterface?.let {
+                        it.playMusic()
+                        PlaylistManager.nowSong()?.let { song ->
+                            refreshSongInformation(song)
+                            updateChildView(song, it, false)
+                        }
+                    }
+                }
+                ON_ERROR -> {
+                    refreshSongInformation(PlaylistManager.nowSong())
+                    resetChildView(false)
+                }
+                ON_COMPLETION, SKIP_NEXT_SONG -> {
+                    switchSong(PlaylistManager.nextSong())
+                }
+                RETURN_PREVIOUS_SONG -> {
+                    switchSong(PlaylistManager.previousSong())
+                }
+            }
+            return true
+        }
     }
 
     companion object {
@@ -275,61 +382,5 @@ class StageActivity : AppCompatActivity() {
         }
     }
 
-    inner class MusicServiceConnection: ServiceConnection {
-        var binderInterface: IBinderInterface? = null
-        override fun onServiceDisconnected(name: ComponentName?) {
-            binderInterface = null
-        }
 
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val binder = IBinderInterface.Stub.asInterface(service)
-            binderInterface = binder
-            val nowSong = PlaylistManager.nowSong()
-            if (nowSong != null) {
-                refreshSongInformation(nowSong)
-                refreshChildView(nowSong, binder, intent.getBooleanExtra(IS_MUSIC_PAUSE,
-                    true))
-            }
-            if (binder.prepared()) {
-                controlAdapter.playOrPauseButton.isClickable = true
-            }
-            // 注册监听器
-            binder.registerPlayerStateListener(listener)
-            // 设置循环模式
-            binder.setLooping(PlaylistManager.playPattern == PlayPattern.SINGLE_SONG_LOOP)
-            binder.setScreenOn(true)
-        }
-    }
-
-    private inner class Callback: Handler.Callback {
-        override fun handleMessage(msg: Message): Boolean {
-            when (msg.what) {
-                ON_PREPARED -> {
-                    musicServiceConnection.binderInterface?.let {
-                        it.playMusic()
-                        PlaylistManager.nowSong()?.let {
-                                song -> refreshChildView(song, it, false)
-                        }
-                    }
-                    // 允许点击播放按钮
-                    controlAdapter.playOrPauseButton.isClickable = true
-                }
-                ON_ERROR -> {
-                    controlAdapter.pause = true
-                    lyricView.loadingLyric = false
-                    lyricView.reset()
-                    // 禁止点击播放按钮
-                    controlAdapter.playOrPauseButton.isClickable = false
-                }
-                ON_COMPLETION, SKIP_NEXT_SONG -> {
-                    switchSong(PlaylistManager.nextSong())
-                }
-                RETURN_PREVIOUS_SONG -> {
-                    switchSong(PlaylistManager.previousSong())
-                }
-            }
-            return true
-        }
-
-    }
 }
