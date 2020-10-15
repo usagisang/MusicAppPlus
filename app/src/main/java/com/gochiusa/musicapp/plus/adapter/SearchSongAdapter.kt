@@ -1,6 +1,5 @@
 package com.gochiusa.musicapp.plus.adapter
 
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,11 +11,11 @@ import com.gochiusa.musicapp.plus.tasks.main.MainActivity.Companion.PREPARE_MUSI
 import com.gochiusa.musicapp.plus.util.PlaylistManager
 import org.greenrobot.eventbus.EventBus
 
-class SearchSongAdapter(list: MutableList<Song>, val context: Context) :
+class SearchSongAdapter(list: MutableList<Song>) :
     FootViewAdapter<Song, SearchSongAdapter.ContentViewHolder>(list) {
 
-    override fun createContentView(parent: ViewGroup?): NormalViewHolder {
-        return ContentViewHolder(LayoutInflater.from(context).inflate(
+    override fun createContentView(parent: ViewGroup): NormalViewHolder {
+        return ContentViewHolder(LayoutInflater.from(parent.context).inflate(
             R.layout.item_adapter_music_card, parent, false))
     }
 

@@ -2,9 +2,11 @@ package com.gochiusa.musicapp.plus.tasks.main.child
 
 import com.example.repository.RequestCallBack
 import com.example.repository.bean.UserJson
+import com.example.repository.bean.UserPlayListJson
 import com.gochiusa.musicapp.library.util.DataUtil
 import com.gochiusa.musicapp.plus.base.BasePresenterImpl
 import com.gochiusa.musicapp.plus.entity.User
+import com.gochiusa.musicapp.plus.entity.UserPlaylist
 import com.gochiusa.musicapp.plus.util.LogUtil
 import com.gochiusa.musicapp.plus.util.UserManager
 
@@ -56,8 +58,29 @@ class UserPagePresenter(view: UserContract.View):
         DataUtil.clearAllCookies()
     }
 
+    override fun requestUserPlaylist(userId: Long) {
+        DataUtil.clientMusicApi.getUserPlayList(userId, object : RequestCallBack<UserPlayListJson> {
+            override fun callback(data: UserPlayListJson) {
+                val list = mutableListOf<UserPlaylist>()
+                if (data.playlist == null) {
+                    error(LOAD_USER_PLAYLIST_FAILED)
+                }
+                for (eachData in data.playlist!!) {
+                    list.add(UserPlaylist(eachData))
+                }
+                view?.loadUserPlaylistSuccess(list)
+            }
+
+            override fun error(errorMsg: String) {
+                LogUtil.printToConsole(errorMsg)
+            }
+
+        })
+    }
+
 
     companion object {
         private const val LOGIN_ERROR_TIP = "用户名或密码错误，请重试"
+        private const val LOAD_USER_PLAYLIST_FAILED = "用户歌单数据为空"
     }
 }

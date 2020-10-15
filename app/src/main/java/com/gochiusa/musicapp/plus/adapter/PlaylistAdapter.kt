@@ -79,7 +79,7 @@ class PlaylistAdapter(private val songList: List<Song>)
 
     class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val songNameView: TextView = itemView.findViewById(R.id.tv_item_song_name)
-        val deleteButton: ImageButton = itemView.findViewById(R.id.btn_playlist_delete)
+        val deleteButton: ImageButton = itemView.findViewById(R.id.btn_widget_delete)
     }
 
     interface ItemDeleteListener {

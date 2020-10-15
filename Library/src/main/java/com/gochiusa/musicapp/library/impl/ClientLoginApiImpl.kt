@@ -6,6 +6,9 @@ import com.example.repository.api.ClientLoginApi
 import com.example.repository.bean.UserJson
 import com.gochiusa.musicapp.library.util.Md5Calculator
 import com.gochiusa.musicapp.library.util.defaultSubscribe
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class ClientLoginApiImpl: ClientLoginApi {
 
@@ -25,7 +28,9 @@ class ClientLoginApiImpl: ClientLoginApi {
     }
 
     override fun logout() {
-        loginApi.logout()
+        loginApi.logout().enqueue(object : Callback<Unit> {
+            override fun onFailure(call: Call<Unit>, t: Throwable) {}
+            override fun onResponse(call: Call<Unit>, response: Response<Unit>) {}
+        })
     }
-
 }

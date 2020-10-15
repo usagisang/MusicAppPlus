@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:usagi="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <com.gochiusa.musicapp.plus.widget.RoundImageView
+        android:id="@+id/iv_child_user_list_cover"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/ic_widget_album"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        usagi:draw_type="round_rect"
+        usagi:round_rect_radius="40"/>
+
+    <TextView
+        android:id="@+id/tv_child_user_list_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="10dp"
+        app:layout_constraintStart_toEndOf="@+id/iv_child_user_list_cover"
+        app:layout_constraintTop_toTopOf="@+id/iv_child_user_list_cover"
+        tools:text="点兔点兔" />
+
+    <TextView
+        android:id="@+id/tv_child_user_list_song_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        app:layout_constraintBottom_toBottomOf="@+id/iv_child_user_list_cover"
+        app:layout_constraintStart_toEndOf="@+id/iv_child_user_list_cover"
+        tools:text="50首" />
+</androidx.constraintlayout.widget.ConstraintLayout>

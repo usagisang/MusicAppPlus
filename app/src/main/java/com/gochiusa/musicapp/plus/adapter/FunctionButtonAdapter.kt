@@ -20,7 +20,7 @@ class FunctionButtonAdapter(val context: Context):
         return ViewHolder(itemView)
     }
 
-    override fun getItemCount(): Int = 4
+    override fun getItemCount(): Int = 3
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         when (position) {
@@ -39,17 +39,10 @@ class FunctionButtonAdapter(val context: Context):
                 }
             }
             2 -> {
-                holder.imageView.setImageResource(R.drawable.ic_main_user_playlist)
-                holder.textView.text = "歌单收藏"
-                holder.itemView.setOnClickListener {
-                    onButtonClickListener?.onClick(2)
-                }
-            }
-            3 -> {
                 holder.imageView.setImageResource(R.drawable.ic_main_update_app)
                 holder.textView.text = "检查更新"
                 holder.itemView.setOnClickListener {
-                    onButtonClickListener?.onClick(3)
+                    onButtonClickListener?.onClick(2)
                 }
             }
         }

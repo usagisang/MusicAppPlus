@@ -1,6 +1,7 @@
 package com.gochiusa.musicapp.library.impl
 
 import com.example.repository.bean.UserJson
+import retrofit2.Call
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
@@ -19,5 +20,5 @@ interface LoginApi {
     @GET("login/status")
     fun getLoginStatus(): Observable<UserJson>
     @GET("logout")
-    fun logout(): Observable<Unit>
+    fun logout(): Call<Unit>
 }

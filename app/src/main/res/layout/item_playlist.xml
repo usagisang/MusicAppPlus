@@ -4,7 +4,7 @@
     android:layout_height="wrap_content">
     <TextView
         android:id="@+id/tv_item_song_name"
-        android:layout_toStartOf="@+id/btn_playlist_delete"
+        android:layout_toStartOf="@+id/btn_widget_delete"
         android:lines="1"
         android:ellipsize="end"
         android:textSize="15sp"
@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
     <ImageButton
-        android:id="@+id/btn_playlist_delete"
+        android:id="@+id/btn_widget_delete"
         android:background="@drawable/ic_service_close"
         android:layout_marginStart="40dp"
         android:layout_width="wrap_content"

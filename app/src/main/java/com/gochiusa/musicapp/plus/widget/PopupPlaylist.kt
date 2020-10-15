@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.gochiusa.musicapp.plus.R
 import com.gochiusa.musicapp.plus.adapter.PlaylistAdapter
+import com.gochiusa.musicapp.plus.util.LogUtil
 import com.gochiusa.musicapp.plus.util.PlaylistManager
 
 
@@ -23,11 +24,12 @@ class PopupPlaylist(private val window: Window, contentView: View, width: Int, h
     /**
      * 以下是作为播放列表ContentView内的控件
      */
-    private val clearButton: ImageButton = contentView.findViewById(R.id.btn_list_clear_all)
-    private val songCountTextView: TextView = contentView.findViewById(R.id.tv_list_song_count)
+    private val clearButton: ImageButton = contentView.findViewById(R.id.btn_widget_clear_all)
+    private val songCountTextView: TextView = contentView.findViewById(R.id.tv_widget_song_count)
 
-    private val songRecyclerView: RecyclerView = contentView.findViewById(R.id.rv_list_play_content)
+    private val songRecyclerView: RecyclerView = contentView.findViewById(R.id.rv_widget_play_content)
     private val playlistAdapter = PlaylistAdapter(PlaylistManager.getPlaylist())
+    private val linearLayoutManager = LinearLayoutManager(contentView.context)
 
     val isShowing: Boolean
         get() = popupWindow.isShowing
@@ -50,7 +52,7 @@ class PopupPlaylist(private val window: Window, contentView: View, width: Int, h
             setAlpha(1F)
         }
         // 初始化RecyclerView
-        songRecyclerView.layoutManager = LinearLayoutManager(contentView.context)
+        songRecyclerView.layoutManager = linearLayoutManager
         songRecyclerView.addItemDecoration(DefaultDecoration
             (10, 35, 10, 35))
         songRecyclerView.adapter = playlistAdapter
@@ -68,10 +70,15 @@ class PopupPlaylist(private val window: Window, contentView: View, width: Int, h
     }
 
     fun show(parent: View, gravity: Int, x: Int, y: Int) {
+        // 让背景变暗
         setAlpha(0.3F)
-        popupWindow.showAtLocation(parent, gravity, x, y)
+        // 刷新一下列表数据
         playlistAdapter.notifyDataSetChanged()
+        // 刷新歌曲数目
         songCountTextView.text = playlistAdapter.itemCount.toString()
+        // 将列表滚动至中间位置
+        scrollToListCenter()
+        popupWindow.showAtLocation(parent, gravity, x, y)
     }
 
     fun dismiss() {
@@ -86,5 +93,9 @@ class PopupPlaylist(private val window: Window, contentView: View, width: Int, h
         layoutParams.alpha = alpha
         window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         window.attributes = layoutParams
+    }
+
+    private fun scrollToListCenter() {
+        songRecyclerView.smoothScrollToPosition(PlaylistManager.songPlayingPosition)
     }
 }

@@ -18,7 +18,8 @@ abstract class FootViewAdapter<T, V : FootViewAdapter.NormalViewHolder>(list: Mu
     /**
      * 尾布局
      */
-    private lateinit var footView: View
+    protected open lateinit var footView: View
+
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
@@ -34,7 +35,7 @@ abstract class FootViewAdapter<T, V : FootViewAdapter.NormalViewHolder>(list: Mu
      * 生成尾布局
      * @return 尾布局的ViewHolder
      */
-    protected fun createFootView(parent: ViewGroup): NormalViewHolder {
+    protected open fun createFootView(parent: ViewGroup): NormalViewHolder {
         // 如果尾布局的View尚未创建
         if (! this::footView.isInitialized) {
             footView = LayoutInflater.from(parent.context).inflate(
@@ -72,7 +73,7 @@ abstract class FootViewAdapter<T, V : FootViewAdapter.NormalViewHolder>(list: Mu
     /**
      * 生成携带普通内容的View的ViewHolder，需要子类实现
      */
-    abstract fun createContentView(parent: ViewGroup?): NormalViewHolder
+    abstract fun createContentView(parent: ViewGroup): NormalViewHolder
 
     /**
      * 需要子类实现，为普通内容的View绑定数据显示的相关操作

@@ -11,5 +11,6 @@ class UserPlayListJson{
         var id : Long? = null
         var name : String? = null
         var coverImgUrl : String? = null
+        var trackCount : Int? = null
     }
 }

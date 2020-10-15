@@ -9,6 +9,7 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.animation.LinearInterpolator
 import androidx.appcompat.widget.AppCompatImageView
+import com.gochiusa.musicapp.plus.R
 import kotlin.math.abs
 
 
@@ -34,10 +35,31 @@ class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
      */
     private var rotateAnimator: RotateAnimator? = null
 
+    /**
+     * 绘制模式，默认为圆形绘制模式
+     */
+    private var drawType: Int = CIRCLE
+
+    /**
+     * 绘制圆角矩形时边角的弧度
+     */
+    private var roundRectRadius: Float = 50F
+
+    init {
+        // 获取属性集合
+        val typedArray = context.obtainStyledAttributes(attrs, R.styleable.RoundImageView)
+        // 获取设置的属性值
+        drawType = typedArray.getInt(R.styleable.RoundImageView_draw_type, CIRCLE)
+        roundRectRadius = typedArray.getFloat(
+            R.styleable.RoundImageView_round_rect_radius, 50F)
+        typedArray.recycle()
+    }
+
+
     override fun onDraw(canvas: Canvas?) {
         if (drawable is BitmapDrawable) {
-            // 绘制出圆形的Bitmap
-            drawRoundBitmap((drawable as BitmapDrawable).bitmap, canvas)
+            // 按照自定义方式绘制Bitmap
+            drawBitmap((drawable as BitmapDrawable).bitmap, canvas)
         } else {
             // 按照默认的形式绘制
             super.onDraw(canvas)
@@ -45,9 +67,9 @@ class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
     }
 
     /**
-     *  辅助方法，尝试在View上绘制圆形的Bitmap
+     *  辅助方法，尝试在View上绘制圆形或正方形的Bitmap
      */
-    private fun drawRoundBitmap(bitmap: Bitmap, canvas: Canvas?) {
+    private fun drawBitmap(bitmap: Bitmap, canvas: Canvas?) {
         var newBitmap = bitmap
         if (scale) {
             newBitmap = scaleBitmap(bitmap)
@@ -56,9 +78,22 @@ class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
         canvas?.let {
             val halfWidth = (width / 2).toFloat()
             val halfHeight = (height / 2 ).toFloat()
-            it.drawCircle(halfWidth, halfHeight, halfWidth.coerceAtMost(halfHeight), bitmapPaint)
+            if (drawType == CIRCLE) {
+                it.drawCircle(
+                    halfWidth,
+                    halfHeight,
+                    halfWidth.coerceAtMost(halfHeight),
+                    bitmapPaint
+                )
+            } else {
+                it.drawRoundRect(left.toFloat(), top.toFloat(), right.coerceAtMost(
+                    height + left).toFloat(),
+                    bottom.coerceAtMost(width + top).toFloat(),
+                    roundRectRadius, roundRectRadius, bitmapPaint)
+            }
         }
     }
+
 
     /**
      *  辅助方法，计算缩放图片以适应view的宽高需要的比例，并反应在Matrix上
@@ -132,6 +167,10 @@ class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
             lastRotate = nowRotate
             view.rotation = viewRotate
         }
+    }
 
+    companion object {
+        const val CIRCLE = 1
+        const val ROUND_RECT = 2
     }
 }

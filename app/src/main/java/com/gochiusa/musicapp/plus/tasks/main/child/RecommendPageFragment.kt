@@ -81,7 +81,7 @@ class RecommendPageFragment: BaseFragment<RecommendContract.Presenter>(),
 
     override fun onClick(position: Int) {
         when (position) {
-            3 -> {
+            2 -> {
                 presenter.requestUpdate()
             }
         }

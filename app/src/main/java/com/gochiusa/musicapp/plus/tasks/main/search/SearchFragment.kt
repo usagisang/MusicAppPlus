@@ -34,14 +34,9 @@ class SearchFragment: BaseFragment<SearchContract.Presenter>(), SearchContract.V
     /**
      *  显示数据的适配器
      */
-    private lateinit var adapter: SearchSongAdapter
+    private val adapter: SearchSongAdapter = SearchSongAdapter(mutableListOf())
 
     override fun onBindPresenter(): SearchContract.Presenter = SearchPresenter(this)
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        adapter = SearchSongAdapter(mutableListOf(), context)
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,

@@ -3,6 +3,7 @@ package com.gochiusa.musicapp.plus.tasks.main.child
 import com.gochiusa.musicapp.plus.base.BasePresenter
 import com.gochiusa.musicapp.plus.base.BaseView
 import com.gochiusa.musicapp.plus.entity.User
+import com.gochiusa.musicapp.plus.entity.UserPlaylist
 
 interface UserContract {
     interface View: BaseView {
@@ -22,6 +23,11 @@ interface UserContract {
          *                以提示用户正在进行加载，传入false将会隐藏这些控件
          */
         fun showLoading(loading: Boolean)
+
+        /**
+         * 歌单信息加载成功后回调的方法
+         */
+        fun loadUserPlaylistSuccess(userPlaylist: MutableList<UserPlaylist>)
     }
     interface Presenter: BasePresenter {
         /**
@@ -38,5 +44,10 @@ interface UserContract {
          *  退出登陆
          */
         fun logout()
+
+        /**
+         * 请求用户总的歌单信息
+         */
+        fun requestUserPlaylist(userId: Long)
     }
 }
