@@ -1,0 +1,12 @@
+com/github/authorfu/lrcparser/BuildConfig.java
+ com.github.authorfu.lrcparser.BuildConfig
+com/github/authorfu/lrcparser/parser/Sentence.java
+ com.github.authorfu.lrcparser.parser.Sentence
+ com.github.authorfu.lrcparser.parser.Sentence$SentenceComparator
+com/github/authorfu/lrcparser/parser/LyricParser.java
+ com.github.authorfu.lrcparser.parser.LyricParser
+ com.github.authorfu.lrcparser.parser.LyricParser$LyricParseException
+com/github/authorfu/lrcparser/LrcParser.java
+ com.github.authorfu.lrcparser.LrcParser
+com/github/authorfu/lrcparser/Lyric.java
+ com.github.authorfu.lrcparser.Lyric

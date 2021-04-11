@@ -286,22 +286,25 @@ class StageActivity : AppCompatActivity() {
     private fun prepareLyric(song: Song) {
         DataUtil.clientMusicApi.getSongLyric(song.id, object : RequestCallBack<LyricJson> {
             override fun callback(data: LyricJson) {
-                if (data.lrc?.lyric != null ) {
-                    val list = LyricParser.create(
-                        BufferedReader(StringReader(data.lrc!!.lyric!!))).sentences
+                data.lrc?.lyric?.let {
+                    lyricView.addLyric(LyricParser.create(
+                            BufferedReader(StringReader(it))).sentences)
+                    data.tlyric?.lyric.let {tLyric ->
+                        lyricView.addTransLyric(LyricParser.create(
+                            BufferedReader(StringReader(tLyric))).sentences)
+                    }
                     lyricView.loadingLyric = false
-                    lyricView.addLyric(list)
                     // 为进度条绑定歌词控件
                     musicProgressBar.bindLyricView(lyricView)
-                } else {
-                    error("请求的数据为空")
-                }
+                } ?: error("请求的数据为空")
             }
             override fun error(errorMsg: String) {
                 LogUtil.printToConsole(errorMsg)
-                lyricView.loadingLyric = false
-                lyricView.reset()
-                lyricView.invalidate()
+                lyricView.run {
+                    loadingLyric = false
+                    reset()
+                    invalidate()
+                }
             }
         })
     }

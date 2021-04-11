@@ -5,19 +5,19 @@
   "elements": [
     {
       "outputType": {
-        "type": "AAPT_FRIENDLY_MERGED_MANIFESTS"
+        "type": "MERGED_MANIFESTS"
       },
       "apkData": {
         "type": "MAIN",
         "splits": [],
         "versionCode": 1,
         "versionName": "1.0",
-        "outputFile": "LrcParser-debug.aar",
-        "fullName": "debug",
-        "baseName": "debug",
+        "outputFile": "LrcParser-release.aar",
+        "fullName": "release",
+        "baseName": "release",
         "dirName": ""
       },
-      "path": "AndroidManifest.xml",
+      "path": "../../library_manifest/release/AndroidManifest.xml",
       "properties": {
         "packageId": "com.github.authorfu.lrcparser",
         "split": ""
