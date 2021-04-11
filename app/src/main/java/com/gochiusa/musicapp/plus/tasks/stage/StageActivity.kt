@@ -11,11 +11,10 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.example.repository.RequestCallBack
 import com.example.repository.bean.LyricJson
 import com.github.authorfu.lrcparser.parser.LyricParser
-import com.gochiusa.musicapp.library.util.DataUtil
 import com.gochiusa.musicapp.plus.R
 import com.gochiusa.musicapp.plus.adapter.MusicControlAdapter
 import com.gochiusa.musicapp.plus.adapter.PlaylistAdapter
@@ -33,7 +32,6 @@ import com.gochiusa.musicapp.plus.service.PlayStateListenerImpl.Companion.RETURN
 import com.gochiusa.musicapp.plus.service.PlayStateListenerImpl.Companion.SKIP_NEXT_SONG
 import com.gochiusa.musicapp.plus.tasks.main.MainActivity.Companion.BUTTON_TURN_TO_PAUSE
 import com.gochiusa.musicapp.plus.tasks.main.MainActivity.Companion.BUTTON_TURN_TO_PLAY
-import com.gochiusa.musicapp.plus.util.LogUtil
 import com.gochiusa.musicapp.plus.util.PlaylistManager
 import com.gochiusa.musicapp.plus.util.TimeCalculator
 import com.gochiusa.musicapp.plus.util.WidgetUtil
@@ -45,7 +43,7 @@ import org.greenrobot.eventbus.ThreadMode
 import java.io.BufferedReader
 import java.io.StringReader
 
-class StageActivity : AppCompatActivity() {
+class StageActivity : AppCompatActivity(), StageContract.View {
 
     private lateinit var backButton: ImageButton
     private lateinit var songNameTextView: TextView
@@ -58,6 +56,10 @@ class StageActivity : AppCompatActivity() {
     private lateinit var playlistView: View
     private lateinit var popupPlaylist: PopupPlaylist
 
+    private lateinit var downloadButton: ImageButton
+
+    private val presenter: StageContract.Presenter
+
     /**
      * 底部控制栏的适配器
      */
@@ -69,6 +71,10 @@ class StageActivity : AppCompatActivity() {
     private val listener = PlayStateListenerImpl(Handler(Looper.getMainLooper(), Callback()))
 
     private val musicServiceConnection = MusicServiceConnection()
+
+    init {
+        presenter = StagePresenter(this)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,7 +97,7 @@ class StageActivity : AppCompatActivity() {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleEvent(eventMessage: EventMessage) {
-        when(eventMessage.messageCode) {
+        when (eventMessage.messageCode) {
             PlaylistAdapter.REPLAY_NOW_SONG -> {
                 val song = PlaylistManager.nowSong()
                 refreshSongInformation(song)
@@ -114,12 +120,16 @@ class StageActivity : AppCompatActivity() {
         musicControlView = findViewById(R.id.widget_stage_music_control)
         lyricView = findViewById(R.id.lyric_view)
         playlistView = layoutInflater.inflate(R.layout.layout_playlist, null)
-        popupPlaylist = PopupPlaylist(window, playlistView, ViewGroup.LayoutParams.MATCH_PARENT,
-            WidgetUtil.dpToPx(400).toInt())
+        popupPlaylist = PopupPlaylist(
+            window, playlistView, ViewGroup.LayoutParams.MATCH_PARENT,
+            WidgetUtil.dpToPx(400).toInt()
+        )
 
         musicControlView.adapter = controlAdapter
         // 禁用按钮的点击
         controlAdapter.playOrPauseButton.isClickable = false
+
+        downloadButton = findViewById(R.id.ib_stage_download)
 
         initClickListener()
     }
@@ -132,15 +142,18 @@ class StageActivity : AppCompatActivity() {
             MusicControlAdapter.PatternButtonClickListener {
             override fun onClick(playPattern: PlayPattern) {
                 PlaylistManager.playPattern = playPattern
-                musicServiceConnection.binderInterface?.setLooping(playPattern ==
-                        PlayPattern.SINGLE_SONG_LOOP)
+                musicServiceConnection.binderInterface?.setLooping(
+                    playPattern ==
+                            PlayPattern.SINGLE_SONG_LOOP
+                )
             }
         }
         // 注册切换上一首、下一首按钮的点击事件
         controlAdapter.nextSongButtonClickListener = View.OnClickListener {
-            switchSong(PlaylistManager.nextSong()) }
+            switchSong(PlaylistManager.nextSong())
+        }
         controlAdapter.lastSongButtonClickListener = View.OnClickListener {
-           switchSong(PlaylistManager.previousSong())
+            switchSong(PlaylistManager.previousSong())
         }
         // 注册播放/暂停按钮的点击事件
         controlAdapter.addPlayOrPauseButtonListener(object : PlayOrPauseClickListener {
@@ -189,8 +202,12 @@ class StageActivity : AppCompatActivity() {
 
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 musicProgressBar.seekBarChanging = false
-                lyricView.scrollToLine(TimeCalculator.getIndexWithProgress(musicProgress,
-                    lyricView.getSentenceList()))
+                lyricView.scrollToLine(
+                    TimeCalculator.getIndexWithProgress(
+                        musicProgress,
+                        lyricView.getSentenceList()
+                    )
+                )
                 musicServiceConnection.binderInterface?.progress = musicProgress
                 musicProgress = 0
             }
@@ -214,6 +231,46 @@ class StageActivity : AppCompatActivity() {
             refreshSongInformation(null)
             EventBus.getDefault().post(EventMessage(PlaylistAdapter.REPLAY_NOW_SONG))
         }
+
+        // 绑定下载按钮的点击事件
+        downloadButton.setOnClickListener {
+            PlaylistManager.nowSong()?.let {
+                presenter.downloadSong(it)
+            }
+            downloadButton.isEnabled = false
+        }
+    }
+
+    override fun loadLyricSuccess(data: LyricJson) {
+        data.lrc?.lyric?.let {
+            lyricView.addLyric(
+                LyricParser.create(
+                    BufferedReader(StringReader(it))
+                ).sentences
+            )
+            data.tlyric?.lyric.let { tLyric ->
+                lyricView.addTransLyric(
+                    LyricParser.create(
+                        BufferedReader(StringReader(tLyric))
+                    ).sentences
+                )
+            }
+            lyricView.loadingLyric = false
+            // 为进度条绑定歌词控件
+            musicProgressBar.bindLyricView(lyricView)
+        }
+    }
+
+    override fun loadLyricError(errorMsg: String) {
+        lyricView.run {
+            loadingLyric = false
+            reset()
+            invalidate()
+        }
+    }
+
+    override fun showToast(message: String) {
+        Toast.makeText(baseContext, message, Toast.LENGTH_SHORT).show()
     }
 
     /**
@@ -261,7 +318,7 @@ class StageActivity : AppCompatActivity() {
                 // 尝试启动封面旋转
                 roundImageView.startAnimator()
             }
-            prepareLyric(song)
+            presenter.requestLyric(song.id)
         }
     }
 
@@ -276,37 +333,10 @@ class StageActivity : AppCompatActivity() {
         lyricView.loadingLyric = lyricLoading
         lyricView.reset()
         musicProgressBar.reset()
+        // 允许点击下载按钮
+        downloadButton.isEnabled = true
         // 停止旋转
         roundImageView.cancelAnimator()
-    }
-
-    /**
-     * 发起加载歌词请求
-     */
-    private fun prepareLyric(song: Song) {
-        DataUtil.clientMusicApi.getSongLyric(song.id, object : RequestCallBack<LyricJson> {
-            override fun callback(data: LyricJson) {
-                data.lrc?.lyric?.let {
-                    lyricView.addLyric(LyricParser.create(
-                            BufferedReader(StringReader(it))).sentences)
-                    data.tlyric?.lyric.let {tLyric ->
-                        lyricView.addTransLyric(LyricParser.create(
-                            BufferedReader(StringReader(tLyric))).sentences)
-                    }
-                    lyricView.loadingLyric = false
-                    // 为进度条绑定歌词控件
-                    musicProgressBar.bindLyricView(lyricView)
-                } ?: error("请求的数据为空")
-            }
-            override fun error(errorMsg: String) {
-                LogUtil.printToConsole(errorMsg)
-                lyricView.run {
-                    loadingLyric = false
-                    reset()
-                    invalidate()
-                }
-            }
-        })
     }
 
     /**
@@ -319,7 +349,7 @@ class StageActivity : AppCompatActivity() {
         musicServiceConnection.binderInterface?.prepareMusic(song)
     }
 
-    inner class MusicServiceConnection: ServiceConnection {
+    inner class MusicServiceConnection : ServiceConnection {
         var binderInterface: IBinderInterface? = null
         override fun onServiceDisconnected(name: ComponentName?) {
             binderInterface = null
@@ -331,8 +361,12 @@ class StageActivity : AppCompatActivity() {
             val nowSong = PlaylistManager.nowSong()
             if (nowSong != null) {
                 refreshSongInformation(nowSong)
-                updateChildView(nowSong, binder, intent.getBooleanExtra(IS_MUSIC_PAUSE,
-                    true))
+                updateChildView(
+                    nowSong, binder, intent.getBooleanExtra(
+                        IS_MUSIC_PAUSE,
+                        true
+                    )
+                )
             }
             // 注册监听器
             binder.registerPlayerStateListener(listener)
@@ -342,7 +376,7 @@ class StageActivity : AppCompatActivity() {
         }
     }
 
-    private inner class Callback: Handler.Callback {
+    private inner class Callback : Handler.Callback {
         override fun handleMessage(msg: Message): Boolean {
             when (msg.what) {
                 ON_PREPARED -> {
@@ -384,6 +418,4 @@ class StageActivity : AppCompatActivity() {
             context.startActivity(getStartIntent(context, pause))
         }
     }
-
-
 }
