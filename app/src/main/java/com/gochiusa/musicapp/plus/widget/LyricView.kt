@@ -5,6 +5,7 @@ import android.animation.ValueAnimator.AnimatorUpdateListener
 import android.content.Context
 import android.graphics.*
 import android.os.Build
+import android.os.CountDownTimer
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -27,9 +28,14 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
     constructor(context: Context, attrs: AttributeSet?): this(context, attrs, 0)
 
     /**
-     *  缓存所有歌词的集合
+     * 缓存所有歌词的集合
      */
     private val lyricSentenceList: MutableList<Sentence> = mutableListOf()
+
+    /**
+     * 原歌词与翻译歌词的键值映射
+     */
+    private val transLyricMap: MutableMap<Sentence, Sentence?> = mutableMapOf()
 
     /**
      * 当前高亮显示的歌词位置索引，即为当前播放位置
@@ -80,6 +86,11 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
     var onPlayClickListener: OnPlayClickListener? = null
 
     /**
+     * 是否显示翻译歌词，修改完之后请调用View.invalidate()使其重新绘制一遍
+     */
+    var showTranslateLyric: Boolean = true
+
+    /**
      *  字体sp与px的比例
      */
     private val fontScale: Float = context.resources.displayMetrics.scaledDensity
@@ -87,7 +98,7 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
     /**
      *  绘制歌词文字的画笔
      */
-    private val normalTextPaint: TextPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
+    private val lyricTextPaint: TextPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
 
     /**
      *  指示线绘制画笔
@@ -127,12 +138,12 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
     private var dragMode: Boolean = false
 
     /**
-     *  标志变量，是否允许提交歌词复位任务
+     * 累计变量，累计手指离开屏幕的时长，单位为毫秒
      */
-    private var canRedraw: Boolean = true
+    private var pointerUpMillis: Long = 0L
 
     /**
-     *  缓存每一行歌词的底部坐标
+     * 缓存每一行歌词的底部坐标
      */
     private val lyricHeightList = mutableListOf<Float>()
 
@@ -142,6 +153,10 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
      */
     private val lyricStaticLayoutMap: MutableMap<String, StaticLayout> = mutableMapOf()
 
+    /**
+     * 倒计时器，用于复位和隐藏指示线
+     */
+    private var countDownTimer: CountDownTimer? = null
 
     /**
      *  手指抬起后需要执行的任务
@@ -161,12 +176,12 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
                 scrollAnimator?.start()
             }
         }
-        // 允许提交复位任务
-        canRedraw = true
+        // 重置累计毫秒数
+        pointerUpMillis = 0L
     }
 
     /**
-     *  上次点击屏幕的位置
+     * 上次点击屏幕的位置
      */
     private val lastClickPoint: PointF = PointF()
 
@@ -199,9 +214,9 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
 
     init {
         // 设置画笔的颜色、字体大小
-        normalTextPaint.color = ResourcesCompat.getColor(resources, R.color.colorBlack,
+        lyricTextPaint.color = ResourcesCompat.getColor(resources, R.color.colorBlack,
             getContext().theme)
-        normalTextPaint.textSize = WidgetUtil.spToPx(NORMAL_TEXT_SIZE, fontScale)
+        lyricTextPaint.textSize = WidgetUtil.spToPx(NORMAL_TEXT_SIZE, fontScale)
 
         indicatorPaint.color = ResourcesCompat.getColor(resources, R.color.colorGrey,
             getContext().theme)
@@ -262,13 +277,20 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
         for (index in lyricSentenceList.indices) {
             dy += if (index == currentLine) {
                 // 重置画笔颜色
-                normalTextPaint.color = highlightColor
-                drawLyricText(canvas, lyricSentenceList[index].content, normalTextPaint, dy)
+                lyricTextPaint.color = highlightColor
+                drawLyricText(canvas, lyricSentenceList[index].content, lyricTextPaint, dy)
             } else {
                 // 重置画笔颜色
-                normalTextPaint.color = normalColor
-                drawLyricText(canvas, lyricSentenceList[index].content, normalTextPaint, dy)
+                lyricTextPaint.color = normalColor
+                drawLyricText(canvas, lyricSentenceList[index].content, lyricTextPaint, dy)
             }
+            if (showTranslateLyric) {
+                // 如果存在翻译歌词，绘制出来
+                transLyricMap[lyricSentenceList[index]]?.let {
+                    dy += drawLyricText(canvas, it.content, lyricTextPaint, dy)
+                }
+            }
+
             dy += lyricTextMargin
             // 更新指示线行数索引
             if (smallerThan && dy >= scrollY + halfHeight) {
@@ -321,6 +343,7 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
      */
     fun reset() {
         lyricSentenceList.clear()
+        transLyricMap.clear()
         currentLine = 0
         indicatorLine = 0
         lyricHeightList.clear()
@@ -333,7 +356,19 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
      */
     fun addLyric(lyricList: List<Sentence>) {
         lyricSentenceList.addAll(lyricList)
-        invalidate()
+    }
+
+    /**
+     * 添加原歌词对应的翻译歌词，必须先添加原歌词才能添加翻译歌词，否则无效
+     * 翻译歌词的起始时间应当与对应的原歌词一致
+     */
+    fun addTransLyric(transLyricList: List<Sentence>) {
+        for (i in lyricSentenceList.indices) {
+            val transSentence = transLyricList.find { sentence ->
+                return@find sentence.fromTime == lyricSentenceList[i].fromTime
+            }
+            transLyricMap[lyricSentenceList[i]] = transSentence
+        }
     }
 
     fun getSentenceList(): List<Sentence> {
@@ -342,9 +377,9 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
 
     private fun drawHintText(canvas: Canvas, text: String) {
         // 定位歌词显示的横坐标
-        normalTextPaint.color = highlightColor
-        val dx = (width - normalTextPaint.measureText(text)) / 2
-        canvas.drawText(text, dx, (height / 2).toFloat(), normalTextPaint)
+        lyricTextPaint.color = highlightColor
+        val dx = (width - lyricTextPaint.measureText(text)) / 2
+        canvas.drawText(text, dx, (height / 2).toFloat(), lyricTextPaint)
     }
 
     private fun drawLyricText(canvas: Canvas, text: String,
@@ -444,11 +479,14 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
                 }
             }
             MotionEvent.ACTION_UP -> {
-                // 如果有歌词且允许提交重置任务
-                if (hasLyric() && canRedraw) {
-                    postDelayed(pointerUpRunnable, 3000L)
-                    // 阻断接下来重置任务的提交
-                    canRedraw = false
+                // 重置累计的时长
+                pointerUpMillis = 0L
+                // 如果尚未创建定时器
+                countDownTimer ?: let {
+                    // 如果有歌词
+                    if (hasLyric()) {
+                        countDownTimer = createCountTimer().start()
+                    }
                 }
                 dragMode = false
             }
@@ -502,6 +540,9 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
     private fun hasLyric(): Boolean {
         return lyricSentenceList.isNotEmpty()
     }
+
+    private fun createCountTimer() = CountTimer(
+        60000L, 1000L, 3000L)
 
     /**
      * 取消所有正在进行的动画
@@ -621,6 +662,28 @@ class LyricView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
 
         override fun onAnimationUpdate(animation: ValueAnimator?) {
             scrollTo(scrollX, animatedValue as Int)
+        }
+    }
+
+    private inner class CountTimer(millisInFuture: Long,
+                                   val countDownInterval: Long,
+                                   val cancelMillis: Long
+    ): CountDownTimer(millisInFuture, countDownInterval) {
+        override fun onTick(millisUntilFinished: Long) {
+            // 如果时间到达预设阈值，取消这个倒计时器
+            if (pointerUpMillis > cancelMillis) {
+                cancel()
+                // 执行任务
+                pointerUpRunnable.invoke()
+                // 清除这个定时器的缓存
+                countDownTimer = null
+            } else {
+                pointerUpMillis += countDownInterval
+            }
+        }
+        override fun onFinish() {
+            // 调用到这里，意味着这个定时器没有完成复位任务，开启新的计时器继续尝试复位
+            countDownTimer = createCountTimer().start()
         }
     }
 
