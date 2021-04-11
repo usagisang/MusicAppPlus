@@ -21,7 +21,7 @@ class UserPagePresenter(view: UserContract.View):
                         it.avatarUrl ?: "")
                     UserManager.user = user
                     view?.loginSuccess(user)
-                }
+                } ?: error("用户信息获取失败")
             }
             override fun error(errorMsg: String) {
                 LogUtil.printToConsole(errorMsg)
@@ -39,7 +39,7 @@ class UserPagePresenter(view: UserContract.View):
                         it.avatarUrl ?: "")
                     UserManager.user = user
                     view?.loginSuccess(user)
-                }
+                } ?: error("用户信息获取失败")
             }
 
             override fun error(errorMsg: String) {

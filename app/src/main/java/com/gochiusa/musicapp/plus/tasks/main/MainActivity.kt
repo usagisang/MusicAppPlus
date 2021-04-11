@@ -94,6 +94,12 @@ class MainActivity : AppCompatActivity() {
         unregisterReceiver(downloadReceiver)
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // 移除Fragment的数据，避免视图重叠问题
+        outState.remove("android:support:fragments")
+    }
+
     override fun onBackPressed() {
         if (popupPlaylist.isShowing) {
             popupPlaylist.dismiss()
