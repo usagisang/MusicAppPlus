@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".tasks.stage.StageActivity">
     <RelativeLayout
         android:id="@+id/rl_song_information"
@@ -47,7 +47,8 @@
         android:layout_below="@+id/rl_song_information"
         android:src="@drawable/ic_widget_album"
         android:layout_width="250dp"
-        android:layout_height="250dp" />
+        android:layout_height="250dp"
+        app:thumb="true"/>
     <com.gochiusa.musicapp.plus.widget.LyricView
         android:id="@+id/lyric_view"
         android:layout_width="match_parent"

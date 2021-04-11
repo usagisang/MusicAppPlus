@@ -5,25 +5,39 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.media.ThumbnailUtils
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.LinearInterpolator
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.graphics.drawable.toBitmap
 import com.gochiusa.musicapp.plus.R
 import kotlin.math.abs
 
-
-class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
-                     private val scale: Boolean = false):
+/**
+ * 兼具圆形、圆角功能，可以旋转的ImageView
+ * 属性：
+ * draw_type 指示绘制的样式类型，circle是圆形，round_rect是圆角矩形
+ * round_rect_radius 仅对圆角矩形生效，指示圆角矩形的圆角的弧度
+ * thumb 指示是否对图片进行压缩（压缩基于ImageView的宽高）
+ */
+class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
     AppCompatImageView(context, attrs, defStyleAttr) {
 
     constructor(context: Context) : this(context, null, 0)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
 
     /**
-     *  图片缩放矩阵
+     * 这个View是否正在执行旋转动画
      */
-    private val scaleMatrix = Matrix()
+    val animatorRunning: Boolean
+        get() = rotateAnimator != null
+
+    /**
+     * 是否对图片进行缩放
+     */
+    private val thumb: Boolean
 
     /**
      *  绘制图片的画笔
@@ -45,6 +59,7 @@ class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
      */
     private var roundRectRadius: Float = 50F
 
+
     init {
         // 获取属性集合
         val typedArray = context.obtainStyledAttributes(attrs, R.styleable.RoundImageView)
@@ -52,6 +67,7 @@ class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
         drawType = typedArray.getInt(R.styleable.RoundImageView_draw_type, CIRCLE)
         roundRectRadius = typedArray.getFloat(
             R.styleable.RoundImageView_round_rect_radius, 50F)
+        thumb = typedArray.getBoolean(R.styleable.RoundImageView_thumb, false)
         typedArray.recycle()
     }
 
@@ -61,8 +77,13 @@ class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
             // 按照自定义方式绘制Bitmap
             drawBitmap((drawable as BitmapDrawable).bitmap, canvas)
         } else {
-            // 按照默认的形式绘制
-            super.onDraw(canvas)
+            drawable?.let {
+                // 如果不为空，转换为BitmapDrawable
+                setImageDrawable(it.toBitmapDrawable())
+            }  ?: let {
+                // 按照默认的形式绘制
+                super.onDraw(canvas)
+            }
         }
     }
 
@@ -71,13 +92,14 @@ class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
      */
     private fun drawBitmap(bitmap: Bitmap, canvas: Canvas?) {
         var newBitmap = bitmap
-        if (scale) {
-            newBitmap = scaleBitmap(bitmap)
+        // 如果需要压缩，尝试进行压缩
+        if (thumb) {
+            newBitmap = ThumbnailUtils.extractThumbnail(bitmap, width, height)
         }
         bitmapPaint.shader = BitmapShader(newBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
         canvas?.let {
             val halfWidth = (width / 2).toFloat()
-            val halfHeight = (height / 2 ).toFloat()
+            val halfHeight = (height / 2).toFloat()
             if (drawType == CIRCLE) {
                 it.drawCircle(
                     halfWidth,
@@ -86,28 +108,21 @@ class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
                     bitmapPaint
                 )
             } else {
-                it.drawRoundRect(left.toFloat(), top.toFloat(), right.coerceAtMost(
-                    height + left).toFloat(),
-                    bottom.coerceAtMost(width + top).toFloat(),
+                it.drawRoundRect(0F, 0F, (width - paddingRight - paddingLeft).toFloat(),
+                    (height - paddingTop - paddingBottom).toFloat(),
                     roundRectRadius, roundRectRadius, bitmapPaint)
             }
         }
     }
 
-
     /**
-     *  辅助方法，计算缩放图片以适应view的宽高需要的比例，并反应在Matrix上
+     * 尝试将Drawable转换为BitmapDrawable。相比起将Drawable转换为Bitmap然后绘制，
+     * 转换为BitmapDrawable起到了缓存的作用，避免多次调用onDraw后创建了多余的Bitmap。
      */
-    private fun scaleBitmap(bitmap: Bitmap): Bitmap {
-        // 计算缩放比例
-        val scale: Float = (width / bitmap.width.toFloat()).coerceAtMost(
-            height / bitmap.height.toFloat())
-        // 缩放操作
-        scaleMatrix.postScale(scale, scale)
-        val newBitmap =  Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height,
-            scaleMatrix, false)
-        scaleMatrix.reset()
-        return newBitmap
+    private fun Drawable.toBitmapDrawable(): BitmapDrawable {
+        val bitmapWidth = if (this.intrinsicWidth > 0) this.intrinsicWidth else width
+        val bitmapHeight = if (this.intrinsicHeight > 0) this.intrinsicHeight else height
+        return BitmapDrawable(resources, this.toBitmap(bitmapWidth, bitmapHeight))
     }
 
     /**
@@ -116,7 +131,7 @@ class RoundImageView(context: Context, attrs: AttributeSet?, defStyleAttr: Int,
      */
     fun startAnimator(duration: Long = 25000L) {
         if (rotateAnimator == null) {
-           rotateAnimator = RotateAnimator(this, duration)
+            rotateAnimator = RotateAnimator(this, duration)
         }
         rotateAnimator?.start()
     }

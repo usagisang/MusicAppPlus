@@ -6,5 +6,6 @@
             <flag name="round_rect" value="2"/>
         </attr>
         <attr name="round_rect_radius" format="float"/>
+        <attr name="thumb" format="boolean" />
     </declare-styleable>
 </resources>
